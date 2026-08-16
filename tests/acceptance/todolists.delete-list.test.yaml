@@ -1,0 +1,16 @@
+id: todolists.delete-list
+description: "L'usuari esborra una llista amb confirmacio i el sistema esborra tambe els seus items en cascada"
+prompt: "Esborra la llista Compra setmanal"
+setup:
+  - node dist/bin.js todo list-create "Compra setmanal" --json > /tmp/list.json
+  - node -e "console.log(require('/tmp/list.json').list.id)" > /tmp/list_id
+  - node dist/bin.js todo item-add "$(cat /tmp/list_id)" "Pa" --json > /dev/null
+  - node dist/bin.js todo item-add "$(cat /tmp/list_id)" "Llet" --json > /dev/null
+action: >-
+  node dist/bin.js todo list-delete "$(cat /tmp/list_id)" --yes --json
+expected:
+  exit: 0
+  stdout:
+    jsonEquals:
+      "deleted": true
+      "itemsDeleted": 2

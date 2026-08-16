@@ -1,0 +1,13 @@
+id: todolists.create-list
+description: "L'usuari crea una llista amb nom i descripcio i el sistema la crea privada i no mestra"
+prompt: "Crea la llista Compra setmanal"
+action: >-
+  node dist/bin.js todo list-create "Compra setmanal" "Coses que cal comprar cada setmana" --json
+expected:
+  exit: 0
+  stdout:
+    contains:
+      - '"name": "Compra setmanal"'
+    jsonEquals:
+      "list.isMaster": false
+      "list.shared": false

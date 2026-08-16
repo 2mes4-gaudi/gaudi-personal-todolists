@@ -1,0 +1,18 @@
+id: todolists.search-fallback
+description: "Sense token de Llull, la cerca cau al fallback DAO i troba la llista pel nom avisant de la degradacio"
+prompt: "Busca la llista de la compra"
+setup:
+  - node dist/bin.js todo list-create "Compra setmanal" "Coses que cal comprar cada setmana" --json > /dev/null
+  - node dist/bin.js todo list-create "Viatge a Roma" "Preparatius del viatge" --json > /dev/null
+action: >-
+  node dist/bin.js todo list-search "compra" --json
+expected:
+  exit: 0
+  stdout:
+    contains:
+      - '"Compra setmanal"'
+    jsonEquals:
+      "engine": "dao-fallback"
+      "total": 1
+    notContains:
+      - '"Viatge a Roma"'

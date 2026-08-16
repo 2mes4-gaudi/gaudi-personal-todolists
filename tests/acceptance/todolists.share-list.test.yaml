@@ -1,0 +1,13 @@
+id: todolists.share-list
+description: "L'usuari marca una llista com a compartida i queda visible per a tothom"
+prompt: "Comparteix la llista Compra setmanal"
+setup:
+  - node dist/bin.js todo list-create "Compra setmanal" --json > /tmp/list.json
+  - node -e "console.log(require('/tmp/list.json').list.id)" > /tmp/list_id
+action: >-
+  node dist/bin.js todo list-set-shared "$(cat /tmp/list_id)" true --json
+expected:
+  exit: 0
+  stdout:
+    jsonEquals:
+      "list.shared": true

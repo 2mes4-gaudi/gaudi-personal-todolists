@@ -1,0 +1,16 @@
+id: todolists.check-all
+description: "L'usuari marca tota la llista i queda completada (bulk --all)"
+prompt: "Marca-ho tot a la llista"
+setup:
+  - node dist/bin.js todo list-create "Compra setmanal" --json > /tmp/list.json
+  - node -e "console.log(require('/tmp/list.json').list.id)" > /tmp/list_id
+  - node dist/bin.js todo item-add "$(cat /tmp/list_id)" "Pa" --json > /dev/null
+  - node dist/bin.js todo item-add "$(cat /tmp/list_id)" "Llet" --json > /dev/null
+action: >-
+  node dist/bin.js todo item-check "$(cat /tmp/list_id)" "all" --json
+expected:
+  exit: 0
+  stdout:
+    jsonEquals:
+      "updated": 2
+      "completed": true

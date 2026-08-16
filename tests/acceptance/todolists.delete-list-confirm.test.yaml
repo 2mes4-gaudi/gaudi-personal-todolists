@@ -1,0 +1,13 @@
+id: todolists.delete-list-confirm
+description: "Esborrar una llista sense --yes es rebutjat demanant confirmacio humana (CONFIRM_REQUIRED)"
+prompt: "Esborra la llista sense confirmar"
+setup:
+  - node dist/bin.js todo list-create "Compra setmanal" --json > /tmp/list.json
+  - node -e "console.log(require('/tmp/list.json').list.id)" > /tmp/list_id
+action: >-
+  node dist/bin.js todo list-delete "$(cat /tmp/list_id)" --json
+expected:
+  exit: 2
+  stdout:
+    contains:
+      - "CONFIRM_REQUIRED"

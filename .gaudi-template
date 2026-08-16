@@ -1,0 +1,7 @@
+# Metadatos del template — sustituidos por `fp feature create`
+feature_id: devops.cost-management       # {dominio}.{feature}
+feature_short: devops                    # sufijo corto para binarios y prefijos de acción
+feature_name: Cost Management
+feature_description: Monitoriza y optimiza costes GCP/Firebase
+author: Eric
+repository_url: https://github.com/eric/fp-devops-cost-management

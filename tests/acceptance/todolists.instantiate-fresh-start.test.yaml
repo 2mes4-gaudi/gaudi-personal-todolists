@@ -1,0 +1,18 @@
+id: todolists.instantiate-fresh-start
+description: "Una mestra amb items marcats genera una instancia amb tots els items pendents (fresh start)"
+prompt: "Instancia la mestra (que ja te coses marcades) i que la instancia neixi neta"
+setup:
+  - node dist/bin.js todo list-create "Viatges" "Template de viatges" true --json > /tmp/master.json
+  - node -e "console.log(require('/tmp/master.json').list.id)" > /tmp/master_id
+  - node dist/bin.js todo item-add "$(cat /tmp/master_id)" "Passaport" --json > /dev/null
+  - node dist/bin.js todo item-add "$(cat /tmp/master_id)" "Carregador" --json > /dev/null
+  - node dist/bin.js todo item-check "$(cat /tmp/master_id)" "all" --json > /dev/null
+action: >-
+  node dist/bin.js todo list-instantiate "$(cat /tmp/master_id)" "Viatge setembre" --json
+expected:
+  exit: 0
+  stdout:
+    jsonEquals:
+      "items.0.done": false
+      "items.1.done": false
+      "completed": false

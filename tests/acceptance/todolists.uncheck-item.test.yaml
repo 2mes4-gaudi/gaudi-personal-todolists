@@ -1,0 +1,17 @@
+id: todolists.uncheck-item
+description: "L'usuari desmarca una cosa marcada i torna a quedar pendent"
+prompt: "Desmarca el pa"
+setup:
+  - node dist/bin.js todo list-create "Compra setmanal" --json > /tmp/list.json
+  - node -e "console.log(require('/tmp/list.json').list.id)" > /tmp/list_id
+  - node dist/bin.js todo item-add "$(cat /tmp/list_id)" "Pa" --json > /tmp/item.json
+  - node -e "console.log(require('/tmp/item.json').item.id)" > /tmp/item_id
+  - node dist/bin.js todo item-check "$(cat /tmp/list_id)" "all" --json > /dev/null
+action: >-
+  node dist/bin.js todo item-uncheck "$(cat /tmp/list_id)" "$(cat /tmp/item_id)" --json
+expected:
+  exit: 0
+  stdout:
+    jsonEquals:
+      "updated": 1
+      "completed": false

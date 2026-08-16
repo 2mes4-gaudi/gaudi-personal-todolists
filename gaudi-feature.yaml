@@ -1,0 +1,79 @@
+{
+  "manifest": "1.1",
+  "id": "personal.todolists",
+  "name": "Llistes personals",
+  "version": "0.1.0",
+  "description": "Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
+  "author": "Eric",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/eric/fp-devops-cost-management",
+    "main": "main"
+  },
+  "architecture": {
+    "cli": true,
+    "api": false,
+    "apiStack": "none",
+    "agent": ["mastra", "mcp"],
+    "database": ["postgres", "firestore"],
+    "ui": false
+  },
+  "security": {
+    "api": {
+      "auth": "none"
+    }
+  },
+  "dependencies": {
+    "features": [],
+    "packages": ["@gaudi/core@^1.0"],
+    "mcp": [],
+    "gcp": {
+      "services": []
+    }
+  },
+  "actions": [
+    {
+      "id": "personal.hello",
+      "destructive": false
+    }
+  ],
+  "credentials": [],
+  "environment": [],
+  "data": {
+    "firestore": {
+      "project": "",
+      "collections": []
+    },
+    "postgres": {
+      "migrations": "db/migrations/",
+      "tables": []
+    }
+  },
+  "ui": [],
+  "skills": [
+    {
+      "id": "fp-personal",
+      "source": "own",
+      "name": "Llistes personals",
+      "description": "Skill de dominio del feature personal.todolists: Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
+      "version": "0.1.0"
+    }
+  ],
+  "agents": [
+    {
+      "id": "personal-agent",
+      "name": "Llistes personals Agent",
+      "description": "Agente que opera el feature personal.todolists: Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
+      "source": "own",
+      "tools": ["auto"],
+      "instructions": "ai-assets/agents/personal-agent.md",
+      "skills": ["fp-personal"]
+    }
+  ],
+  "hooks": [],
+  "lifecycle": {
+    "install": "scripts/install.sh",
+    "uninstall": "scripts/uninstall.sh",
+    "verify": "gaudi doctor"
+  }
+}

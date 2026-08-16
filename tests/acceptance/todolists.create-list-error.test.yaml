@@ -1,0 +1,11 @@
+id: todolists.create-list-error
+description: "Crear una llista sense nom es rebutja amb error estructurat"
+prompt: "Crea una llista sense nom"
+action: >-
+  node dist/bin.js todo list-create "" --json
+expected:
+  exit: 1
+  stdout:
+    contains:
+      - '"error"'
+      - "name"
