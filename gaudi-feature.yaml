@@ -3,20 +3,20 @@
   "id": "personal.todolists",
   "name": "Llistes personals",
   "version": "0.1.0",
-  "description": "Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
+  "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida.",
   "author": "Eric",
   "repository": {
     "type": "github",
-    "url": "https://github.com/eric/fp-devops-cost-management",
+    "url": "https://github.com/2mes4-gaudi/gaudi-personal-todolists",
     "main": "main"
   },
   "architecture": {
     "cli": true,
-    "api": false,
-    "apiStack": "none",
-    "agent": ["mastra", "mcp"],
+    "api": true,
+    "apiStack": "hono",
+    "agent": ["mastra", "mcp", "opencode"],
     "database": ["postgres", "firestore"],
-    "ui": false
+    "ui": true
   },
   "security": {
     "api": {
@@ -24,56 +24,146 @@
     }
   },
   "dependencies": {
-    "features": [],
+    "features": [
+      {
+        "id": "user.profile",
+        "repository": "https://github.com/2mes4-gaudi/gaudi-user-profile"
+      },
+      {
+        "id": "projects.manager",
+        "repository": "https://github.com/2mes4-gaudi/gaudi-projects-manager"
+      }
+    ],
     "packages": ["@gaudi/core@^1.0"],
     "mcp": [],
     "gcp": {
-      "services": []
+      "services": ["pubsub.googleapis.com"]
     }
   },
   "actions": [
+    { "id": "todo.list-create", "destructive": false },
+    { "id": "todo.list-list", "destructive": false },
+    { "id": "todo.list-get", "destructive": false },
+    { "id": "todo.list-update", "destructive": false, "permission": "todolists.write" },
+    { "id": "todo.list-delete", "destructive": true, "confirm": "required", "permission": "todolists.delete" },
+    { "id": "todo.list-set-master", "destructive": false, "permission": "todolists.write" },
+    { "id": "todo.list-set-shared", "destructive": false, "permission": "todolists.write" },
+    { "id": "todo.list-instantiate", "destructive": false },
+    { "id": "todo.item-add", "destructive": false, "permission": "todolists.write" },
+    { "id": "todo.item-remove", "destructive": true, "confirm": "required", "permission": "todolists.write" },
+    { "id": "todo.item-check", "destructive": false, "permission": "todolists.write" },
+    { "id": "todo.item-uncheck", "destructive": false, "permission": "todolists.write" },
+    { "id": "todo.list-search", "destructive": false }
+  ],
+  "credentials": [
     {
-      "id": "personal.hello",
-      "destructive": false
+      "id": "todolists.llull-token",
+      "type": "token",
+      "transport": ["env"],
+      "defaultTransport": "env",
+      "envVar": "GAUDI_TODOLISTS_LLULL_TOKEN",
+      "description": "Token del motor de cerca Llull (cerca semàntica canònica). Sense token: CRUD íntegre i cerca degradada a fallback DAO.",
+      "required": false,
+      "usedBy": ["actions.todo.list-search", "indexing"]
+    },
+    {
+      "id": "todolists.firebase-sa",
+      "type": "service-account-json",
+      "transport": ["env"],
+      "defaultTransport": "env",
+      "envVar": "GAUDI_TODOLISTS_FIREBASE_SA",
+      "description": "Service account JSON (Firestore + Pub/Sub publisher a la cua única gaudi.notifications).",
+      "required": false,
+      "usedBy": ["messaging"]
     }
   ],
-  "credentials": [],
-  "environment": [],
   "data": {
     "firestore": {
       "project": "",
-      "collections": []
+      "collections": [
+        { "path": "todolists/{listId}", "model": "TodoList" },
+        { "path": "todo_items/{itemId}", "model": "TodoItem" }
+      ]
     },
     "postgres": {
       "migrations": "db/migrations/",
-      "tables": []
+      "tables": [
+        { "name": "todolists", "model": "TodoList" },
+        { "name": "todo_items", "model": "TodoItem" }
+      ]
     }
   },
-  "ui": [],
+  "ui": [
+    { "id": "lists", "kind": "table", "dataSource": "todo.list-list" },
+    { "id": "list-form", "kind": "form", "dataSource": "todo.list-create" },
+    { "id": "list-detail", "kind": "dashboard", "dataSource": "todo.list-get" },
+    { "id": "search", "kind": "dashboard", "dataSource": "todo.list-search" }
+  ],
   "skills": [
     {
-      "id": "fp-personal",
+      "id": "todolists",
       "source": "own",
       "name": "Llistes personals",
-      "description": "Skill de dominio del feature personal.todolists: Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
+      "description": "Skill de domini del feature personal.todolists: crear i mantindre llistes (afegir, esborrar, marcar individual/bulk/tot), llistes mestres instanciables (fresh start), llistes compartides amb col·laboració total i cerca per nom, descripció o text d'items (Llull amb fallback DAO). Usar quan l'usuari parli de llistes, coses pendents, plantilles de llistes o demani cercar on té apuntat alguna cosa.",
       "version": "0.1.0"
     }
   ],
   "agents": [
     {
-      "id": "personal-agent",
+      "id": "todolists-agent",
       "name": "Llistes personals Agent",
-      "description": "Agente que opera el feature personal.todolists: Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
+      "description": "Agente que opera las listas personales del usuario: crea listas y items, marca/desmarca (individual, en bloque o todo), instancia listas maestras, comparte listas y busca listas por propósito (nombre, descripción o texto de items).",
       "source": "own",
       "tools": ["auto"],
-      "instructions": "ai-assets/agents/personal-agent.md",
-      "skills": ["fp-personal"]
+      "instructions": "ai-assets/agents/todolists-agent.md",
+      "skills": ["todolists"]
     }
   ],
+  "messaging": {
+    "queue": "gaudi.notifications",
+    "topics": [
+      { "name": "gaudi.notifications", "mode": "publish" }
+    ]
+  },
   "hooks": [],
   "lifecycle": {
     "install": "scripts/install.sh",
     "uninstall": "scripts/uninstall.sh",
-    "verify": "gaudi doctor"
-  }
+    "verify": "scripts/verify.sh"
+  },
+  "environment": [
+    {
+      "id": "llull-token",
+      "envVar": "GAUDI_TODOLISTS_LLULL_TOKEN",
+      "description": "Token del motor de cerca Llull (cerca semàntica). Sense token: indexació omesa i cerca fallback DAO.",
+      "descriptionLong": "Token del port LlullSearch (projects.manager aporta el servei de plataforma). Amb token: cada llista i item s'indexa (índexs gaudi-personal-todolists-<uid> i gaudi-personal-todolists-shared) i todo.list-search fa fan-out semàntic. Sense token: el CRUD funciona igual i la cerca degrada a match case-insensitive sobre nom, descripció i text d'items.",
+      "required": false,
+      "secret": true,
+      "scope": "feature"
+    },
+    {
+      "id": "llull-url",
+      "envVar": "GAUDI_TODOLISTS_LLULL_URL",
+      "description": "URL del motor Llull (per defecte http://localhost:8080).",
+      "required": false,
+      "secret": false,
+      "scope": "feature"
+    },
+    {
+      "id": "firebase-sa",
+      "envVar": "GAUDI_TODOLISTS_FIREBASE_SA",
+      "description": "Service account JSON (Firestore + Pub/Sub) per publicar events a gaudi.notifications.",
+      "required": false,
+      "secret": true,
+      "scope": "feature"
+    },
+    {
+      "id": "user-key",
+      "envVar": "GAUDI_TODOLISTS_USER_KEY",
+      "description": "Clau d'usuari per defecte del feature (uid de user.profile; per defecte \"local\").",
+      "required": false,
+      "secret": false,
+      "scope": "feature"
+    }
+  ]
 }

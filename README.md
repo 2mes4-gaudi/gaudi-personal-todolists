@@ -1,158 +1,92 @@
-# Llistes personals
+# Llistes personals — personal.todolists
 
-Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.
+Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar
+items, marcar/desmarcar (individual, bulk i tot), llistes **mestres** instanciables
+(snapshot fresh-start), llistes **compartides** (col·laboració total), cerca semàntica
+via **Llull** i **UI embebida**.
 
-> Template del estándar @gaudi (manifest v1.1). Generado por el constructor
-> `gaudi` desde el repo `core`. Toda la documentación del estándar vive en
-> `workspace/core/docs/` (MANIFESTO.md, SPEC.md, schema/).
+Estàndard @gaudi (manifest v1.1, 3 capes, DAOs ×2, CLI agente-friendly, API+UI unificades).
 
-## Estructura estándar
+## Accions (CLI: `node dist/bin.js todo <action> ... --json`)
 
-> `platform/` contiene el código de los SERVICIOS DE PLATAFORMA COMPARTIDOS que
-> el feature aporta (repositorios centrales, DBs multi-agent, APIs públicas).
-> Se desplegan en el ámbito de plataforma (`platform.firebase.project` /
-> `platform.k8s.namespace`) — declarados en `platform_services[]` del manifest.
-> El primer feature que los instala los despliega; los demás verifican.
+| Acció | Descripció | Destructiva |
+|---|---|---|
+| `todo.list-create` `name [description] [isMaster] [shared]` | Crea una llista | — |
+| `todo.list-list` `[isMaster]` | Llistes visibles (seves + compartides) | — |
+| `todo.list-get` `id` | Llista + items | — |
+| `todo.list-update` `id [name] [description]` | Actualitza metadades (owner) | — |
+| `todo.list-delete` `id` | Esborra llista + items en cascada (owner) | ✅ confirm |
+| `todo.list-set-master` `id isMaster` | Promou/demou una llista a mestra (owner) | — |
+| `todo.list-set-shared` `id shared` | Comparteix/deixa de compartir (owner) | — |
+| `todo.list-instantiate` `masterId [name]` | Snapshot fresh-start d'una mestra | — |
+| `todo.item-add` `listId text` | Afegeix item (neix pendent) | — |
+| `todo.item-remove` `itemId` | Esborra item | ✅ confirm |
+| `todo.item-check` `listId itemIds` | Marca: id, `'["id1","id2"]'` o `all` | — |
+| `todo.item-uncheck` `listId itemIds` | Desmarca (idem) | — |
+| `todo.list-search` `query` | Cerca per nom, descripció i text d'items | — |
 
+`userKey` opcional com a darrer argument en totes (per defecte: uid de `user.profile`
+o `GAUDI_TODOLISTS_USER_KEY` → `local`).
 
-```
-.
-├── gaudi-feature.yaml       # CONTRATO: manifest v1.1 (id, deps, acciones, credenciales, datos, AI harness, lifecycle)
-├── ai-assets/               # AI harness: todo lo que el feature expone al agente
-│   ├── agents/              # agentes propios (<id>.md, frontmatter name+description+tools+skills)
-│   └── skills/              # skills propios (<id>/SKILL.md, frontmatter name+description)
-├── src/
-│   ├── domain/              # CAPA 1 · lógica pura: model (zod), actions (registry), services — sin frameworks
-│   ├── ports/               # CAPA 2 · interfaces: DAOs (firestore/postgres) + CredentialProvider
-│   ├── adapters/            # CAPA 3 · CLI agente-friendly + tools Mastra/MCP (desde el registry)
-│   ├── config/              # carga ~/.gaudi/gaudi.yaml (DAO y credenciales globales)
-│   ├── index.ts             # exports públicos del feature
-│   ├── bin.ts               # entry CLI (dist/bin.js)
-│   └── server.ts            # entry API + UI (dist/server.js) — Hono serveix /api + / (UI embeguda)
-├── packages/core/           # runtime @gaudi/core local (vía file:) — el esqueleto de las 3 capas
-├── scripts/                 # hooks lifecycle (install.sh, uninstall.sh, verify.sh)
-├── tests/                   # tests de las capas
-└── ui/                      # (opcional) UI schema-driven (React+Vite, embeguda a la imatge de l'API)
-```
+## Model de dades (DAOs ×2: postgres i firestore)
 
-Reglas: los features NUNCA leen `process.env` (usan `ctx.credentials`); la
-lógica de negocio NUNCA importa commander/express/hono; cada acción declarada
-en el manifest tiene UNA fuente de verdad en el registry.
+- `todolists` (`TodoList`): id, userKey (owner), name, description, isMaster, shared,
+  sourceMasterId (traçabilitat d'instància), createdAt, updatedAt.
+- `todo_items` (`TodoItem`): id, listId, text, done, createdAt. Cascade a nivell de servei.
 
-## Manifest
+## Cerca (Llull, decisión 0007)
 
-```yaml
-id: personal.todolists
-version: 0.1.0
-```
+- Índexs: `gaudi-personal-todolists-<uid>` (privades) + `gaudi-personal-todolists-shared`
+  (compartides). Docs: `list-<id>` (name, description) i `item-<id>` (text, path amb listId).
+- `todo.list-search` fa fan-out al teu índex + el compartit i dedupe per id.
+- Sense `GAUDI_TODOLISTS_LLULL_TOKEN`: el CRUD funciona igual (indexació omesa amb un
+  warning únic) i la cerca degrada a fallback DAO case-insensitive avisant-ho.
 
-## Acciones
+## Messaging (cua única `gaudi.notifications`)
 
-| Acción | Descripción | Destructiva | Confirmación |
-|---|---|---|---|
-| (generado desde el registry — ver `src/domain/actions/`) | | | |
+Events sobris: `todolist.created`, `todolist.deleted`, `todolist.instantiated`,
+`todolist.completed` (transició a tot-marcat, un sol event) i `todolist.shared`.
+Sense daemons: tot és reactiu a accions.
 
-## Uso (CLI)
+## Regles de domini
 
-```bash
-npm install
-npm run build
+- **Visibilitat**: cada usuari veu les seves llistes + totes les `shared`; una privada
+  aliena és invisible ("no trobada o privada").
+- **Owner-only**: `list-update`, `list-delete`, `list-set-master`, `list-set-shared`.
+- **Col·laboració total** a les compartides: tothom pot afegir/esborrar/marcar items.
+- **Instanciar** només funciona sobre mestres (`isMaster: true`); la instància neix
+  privada, no mestra, amb `sourceMasterId` i tots els items pendents (fresh start).
 
-# Sin config global: usa memoria
-node dist/bin.js personal.hello mundo --json
+## Credencials i environment
 
-# Con config global (~/.gaudi/gaudi.yaml): usa firestore o postgres
-npx personal personal.hello mundo --json
-```
+| Env var | Secret | Descripció |
+|---|---|---|
+| `GAUDI_TODOLISTS_LLULL_TOKEN` | ✅ | Token de Llull (cerca semàntica canònica) |
+| `GAUDI_TODOLISTS_LLULL_URL` | — | URL del motor Llull (default `http://localhost:8080`) |
+| `GAUDI_TODOLISTS_FIREBASE_SA` | ✅ | Service account (Firestore + Pub/Sub) |
+| `GAUDI_TODOLISTS_USER_KEY` | — | userKey per defecte (default `local`) |
 
-## Integración con agentes (Mastra/MCP)
+Dependències: `user.profile` (identitat/uid) i `projects.manager` (servei de plataforma Llull).
 
-```ts
-import { buildRegistry, toMastraTools } from "@gaudi/personal.todolists";
-const tools = toMastraTools(buildRegistry(), ctx); // mismo contrato que el CLI
-```
+## API + UI (una sola imatge)
 
-## Arquitectura
+- `GET /health` · `GET /api/health` · `GET /api/registry` (accions) · `GET /api/views`
+- `POST /api/actions/:id` — endpoint genèric (paritat CLI/API)
+- REST de conveniència per a la UI: `/api/lists*`, `/api/lists/:id/items`,
+  `/api/lists/:id/check|uncheck|master|shared|instantiate`, `/api/items/:itemId`, `/api/search?q=`
+- UI embebida (Vite+React, `ui/`) servida a l'arrel amb SPA fallback — patró
+  `files.manager` (model unificat API+UI, SPEC §8).
 
-```
-src/
-├── domain/       # lógica pura: model (zod) + actions (registry) + services
-├── ports/        # DAOs (firestore/postgres) + CredentialProvider (en @gaudi/core)
-├── adapters/     # cli (agente-friendly) + agent (mastra/mcp) — en @gaudi/core
-└── config/       # carga ~/.gaudi/gaudi.yaml (DAOs y credenciales globales)
-```
+## Testing
 
-## Tests
+- Unitari de contracte: `npm test` (24 casos: registry, CRUD, mestres/shared, cerca
+  Llull+fallback, events, paritat CLI/API).
+- Acceptació E2E al sandbox: `bash workspace/core/sandbox/run-tests.sh <dir>`
+  (13 casos a `tests/acceptance/`).
 
-- **Unitarios de capas** (`tests/`): `npm test` (ciclo de vida base del core).
-- **Aceptación E2E** (`tests/acceptance/*.test.yaml`): prompts cortos + acción +
-  resultado esperado, ejecutados con el skill `gaudi-feature-tester` en el
-  sandbox Docker (opencode + skills mapeados + CLI + postgres aislado por test):
-  ```bash
-  bash workspace/core/sandbox/run-tests.sh <feature-dir>
-  ```
-
-## Mensajería de plataforma (cua única)
-
-TODOS los features publican sus comunicaciones hacia el usuario/agente principal
-en la **MISMA cua** (`gaudi.notifications`, port `MessageBus` de `@gaudi/core`,
-transport GCP Pub/Sub):
-
-- **Hacia el usuario/agente** (inbound, fin de procesos, errores) → SIEMPRE por
-  la cua: `ctx.messageBus.publish({ type: "<feature>.<evento>", correlationId, payload })`.
-- **Acciones hacia fuera** (emails a terceros: invitaciones, cancelaciones) →
-  directas (SMTP), no pasan por la cua.
-
-Declarar en el manifest:
-
-```yaml
-messaging:
-  queue: gaudi.notifications
-  topics:
-    - name: gaudi.notifications
-      mode: publish
-```
-
-Sin credencial pubsub, el bus se degrada con gràcia (`{ published: false }`).
-La suscripción de agentes (`subscribe`) es contrato futuro.
-
-## Versions i release (sistema de versionat)
-
-- **Semver per tags**: cada versió publicada és un tag `v<major>.<minor>.<patch>`
-  que coincideix amb `version` del manifest. L'installer resol: `version` →
-  tag; sense versió → `HEAD` de `main`.
-- **Release = acció del DEVELOPER** (mai de l'installer): `gaudi feature release`
-  (o `bash scripts/release.sh --push-images --push-tag`) construeix i puja la
-  imatge ÚNICA (API + UI embeguda) a `ghcr.io/2mes4-gaudi/gaudi-<slug>` i talla
-  el tag. Requereix PAT amb `package:write` (`docker login ghcr.io`).
-
-## API + UI (model unificat — un sol origen)
-
-Quan el feature té `architecture.api: true` i `ui/`, l'app Hono serveix l'API
-(`/api/*` + `/health`) i la UI estàtica (`/`) en una sola imatge/pod. La
-plataforma ho publica sota `/<feature>/api` (API) i `/<feature>/` (UI).
-- **Dependències entre features**: al manifest
-  (`dependencies.features[]` → `{id, repository, version?}`). La resolució i
-  instal·lació topològica la fa l'installer; aquí només es declaren.
-
-## Dependencias
-
-Ver `gaudi-feature.yaml` → `dependencies` (features, mcp, gcp, skills).
-
-## Ciclo de vida (base en el core)
-
-El core integra la base del ciclo de vida — los scripts de `scripts/` son hooks
-**complementarios** que el core invoca tras el paso base si existen:
+## Release
 
 ```bash
-gaudi feature install <dir>     # 1. validar manifest · 2. npm install (preinstall build-core) · 3. npm run build · 4. hook install · 5. catálogo
-gaudi feature uninstall <dir>   # 1. hook uninstall · 2. baja del catálogo core.registry
-gaudi feature verify <dir>      # 1. validar manifest · 2. npm test · 3. hook verify · 4. estado en el catálogo
-gaudi feature publish <id>      # registra el feature instalado en core.registry
+node workspace/core/dist/cli.js feature release <dir> --changelog "..." --push-images --push-tag
+# → hook del registry publica la versió al catàleg central automàticament
 ```
-
-- `scripts/install.sh` → pasos específicos tras instalar (colecciones/tablas, seeds).
-- `scripts/uninstall.sh` → limpieza específica tras desinstalar.
-- `scripts/verify.sh` → chequeos específicos tras el test base (smoke tests propios).
-- `scripts/build-core.js` → bootstrap del `packages/core` local (preinstall de
-  `npm install`; el core lo dispara igualmente al instalar).
