@@ -27,3 +27,7 @@ Primera versió del feature `personal.todolists`.
 - CLI agente-friendly (`todo <action> --json`, `--dry-run`, `--yes`), API Hono
   (`/api/actions/:id` + REST de conveniència) amb paritat CLI/API.
 - Tests: 24 unitaris de contracte + 13 casos d'acceptació E2E al sandbox.
+
+## [0.1.0] - 2026-08-16
+
+- Primera versió: llistes personals (CRUD llistes+items, marcar bulk/all, mestres instanciables fresh-start, compartides col·laboratives, cerca Llull+fallback, events sobris, UI embebida). Tests: 24 unit + 13 E2E sandbox.
