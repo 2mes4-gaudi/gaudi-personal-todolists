@@ -68,7 +68,13 @@ Sense daemons: tot és reactiu a accions.
 
 Dependències: `user.profile` (identitat/uid) i `projects.manager` (servei de plataforma Llull).
 
-## API + UI (una sola imatge)
+## API + UI (model gateway — SPEC §1)
+
+El feature és un MÒDUL (no hi ha imatges ni pods per feature): l'API
+(`createApp`) la munta el **gateway** de la plataforma (`gaudi-platform`) sota
+`/<slug>/api`, i la UI (`ui/dist`) la copia l'installer al webserver
+(`GAUDI_UI_DIR/<slug>`) que la serveix sota `/<slug>/`. El server local
+(`node dist/server.js`) serveix API+UI només per desenvolupament/tests.
 
 - `GET /health` · `GET /api/health` · `GET /api/registry` (accions) · `GET /api/views`
 - `POST /api/actions/:id` — endpoint genèric (paritat CLI/API)
@@ -87,6 +93,7 @@ Dependències: `user.profile` (identitat/uid) i `projects.manager` (servei de pl
 ## Release
 
 ```bash
-node workspace/core/dist/cli.js feature release <dir> --changelog "..." --push-images --push-tag
+node workspace/core/dist/cli.js feature release <dir> --changelog "..." --push-tag
 # → hook del registry publica la versió al catàleg central automàticament
+# → l'installer la desplega (release-watcher → installer.update + deploy-platform)
 ```
