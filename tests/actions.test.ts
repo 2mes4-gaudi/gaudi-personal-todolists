@@ -86,7 +86,6 @@ export function makeCtx(opts: {
   bus?: ReturnType<typeof createLocalBus>;
   withLlullToken?: boolean;
   dryRun?: boolean;
-  userKey?: string;
 } = {}) {
   const llullToken = opts.withLlullToken ?? false;
   return {
@@ -98,6 +97,7 @@ export function makeCtx(opts: {
     dryRun: opts.dryRun ?? false,
     db: opts.db ?? createMemoryDao(),
     llull: opts.llull ?? createFakeLlull(),
+    llullEnabled: llullToken,
     messageBus: opts.bus ?? createLocalBus(),
     clock: () => new Date("2026-08-16T10:00:00.000Z"),
   };
@@ -174,7 +174,7 @@ test("list-create: happy path con defaults (privada, no mestra) + valida nombre"
 test("list-create: indexa el document de la llista al seu índex Llull", async () => {
   const registry = buildRegistry();
   const llull = createFakeLlull();
-  const ctx = makeCtx({ llull });
+  const ctx = makeCtx({ llull, withLlullToken: true });
   const out = (await registry.run("todo.list-create", { name: "Compra" }, ctx)) as any;
   const idx = llull.calls.filter((c) => c.op === "index");
   assert.equal(idx.length, 1);
@@ -202,7 +202,8 @@ test("list-list: scoping per usuari (meves + compartides) i filtre isMaster", as
   const mineView = (await registry.run("todo.list-list", {}, ctx)) as any;
   assert.equal(mineView.lists.length, 3);
 
-  const otherView = (await registry.run("todo.list-list", { userKey: "other" }, makeCtx())) as any;
+  // mateixa instal·lació (mateix DAO), altre usuari: només veu les compartides
+  const otherView = (await registry.run("todo.list-list", { userKey: "other" }, makeCtx({ db: ctx.db }))) as any;
   assert.equal(otherView.lists.length, 1);
   assert.equal(otherView.lists[0].name, "Compartida");
 
@@ -223,12 +224,12 @@ test("list-get: torna llista + items; privada aliena no visible, compartida sí"
   assert.deepEqual(out.items.map((i: any) => i.text).sort(), ["Llet", "Pa"]);
 
   await assert.rejects(
-    () => registry.run("todo.list-get", { id: listId, userKey: "other" }, makeCtx()),
+    () => registry.run("todo.list-get", { id: listId, userKey: "other" }, makeCtx({ db: ctx.db })),
     /no trobada|privada/i
   );
 
   await registry.run("todo.list-set-shared", { id: listId, shared: true }, ctx);
-  const sharedView = (await registry.run("todo.list-get", { id: listId, userKey: "other" }, makeCtx())) as any;
+  const sharedView = (await registry.run("todo.list-get", { id: listId, userKey: "other" }, makeCtx({ db: ctx.db }))) as any;
   assert.equal(sharedView.list.name, "Compra");
   assert.equal(sharedView.items.length, 2);
 });
@@ -236,14 +237,14 @@ test("list-get: torna llista + items; privada aliena no visible, compartida sí"
 test("list-update: només l'owner; reindexa el document", async () => {
   const registry = buildRegistry();
   const llull = createFakeLlull();
-  const ctx = makeCtx({ llull });
+  const ctx = makeCtx({ llull, withLlullToken: true });
   const { listId } = await seedList(ctx, "Compra");
 
   const out = (await registry.run("todo.list-update", { id: listId, name: "Compra gran" }, ctx)) as any;
   assert.equal(out.list.name, "Compra gran");
 
   await assert.rejects(
-    () => registry.run("todo.list-update", { id: listId, name: "X", userKey: "other" }, makeCtx()),
+    () => registry.run("todo.list-update", { id: listId, name: "X", userKey: "other" }, makeCtx({ db: ctx.db })),
     /només|owner|propietari/i
   );
 
@@ -264,7 +265,7 @@ test("list-set-master: toggle del flag (només owner)", async () => {
   assert.equal(off.list.isMaster, false);
 
   await assert.rejects(
-    () => registry.run("todo.list-set-master", { id: listId, isMaster: true, userKey: "other" }, makeCtx()),
+    () => registry.run("todo.list-set-master", { id: listId, isMaster: true, userKey: "other" }, makeCtx({ db: ctx.db })),
     /només|owner|propietari/i
   );
 });
@@ -273,7 +274,7 @@ test("list-set-shared: mou els documents entre índexs (user → shared) i publi
   const registry = buildRegistry();
   const llull = createFakeLlull();
   const bus = createLocalBus();
-  const ctx = makeCtx({ llull, bus });
+  const ctx = makeCtx({ llull, bus, withLlullToken: true });
   const { listId } = await seedList(ctx, "Compra", ["Pa"]);
 
   await registry.run("todo.list-set-shared", { id: listId, shared: true }, ctx);
@@ -328,7 +329,7 @@ test("list-delete: cascada d'items, desindexació i event (només owner)", async
   const registry = buildRegistry();
   const llull = createFakeLlull();
   const bus = createLocalBus();
-  const ctx = makeCtx({ llull, bus });
+  const ctx = makeCtx({ llull, bus, withLlullToken: true });
   const { listId, itemIds } = await seedList(ctx, "Compra", ["Pa", "Llet"]);
 
   const out = (await registry.run("todo.list-delete", { id: listId }, ctx)) as any;
@@ -343,7 +344,7 @@ test("list-delete: cascada d'items, desindexació i event (només owner)", async
 
   const { listId: other } = await seedList(ctx, "Aliena");
   await assert.rejects(
-    () => registry.run("todo.list-delete", { id: other, userKey: "other2" }, makeCtx()),
+    () => registry.run("todo.list-delete", { id: other, userKey: "other2" }, makeCtx({ db: ctx.db })),
     /només|owner|propietari/i
   );
 });
@@ -353,7 +354,7 @@ test("list-delete: cascada d'items, desindexació i event (només owner)", async
 test("item-add: neix pendent i s'indexa com a item-", async () => {
   const registry = buildRegistry();
   const llull = createFakeLlull();
-  const ctx = makeCtx({ llull });
+  const ctx = makeCtx({ llull, withLlullToken: true });
   const { listId } = await seedList(ctx, "Compra");
 
   const out = (await registry.run("todo.item-add", { listId, text: "Pa" }, ctx)) as any;
@@ -372,7 +373,7 @@ test("item-add en llista compartida: col·laboració total (no-owner hi pot afeg
   const ctx = makeCtx();
   const { listId } = await seedList(ctx, "Compra");
   await registry.run("todo.list-set-shared", { id: listId, shared: true }, ctx);
-  const out = (await registry.run("todo.item-add", { listId, text: "Cafè", userKey: "other" }, makeCtx())) as any;
+  const out = (await registry.run("todo.item-add", { listId, text: "Cafè", userKey: "other" }, makeCtx({ db: ctx.db }))) as any;
   assert.equal(out.item.text, "Cafè");
 });
 
@@ -418,7 +419,7 @@ test("item-uncheck: desmarca i completed torna a false", async () => {
 test("item-remove: esborra i desindexa", async () => {
   const registry = buildRegistry();
   const llull = createFakeLlull();
-  const ctx = makeCtx({ llull });
+  const ctx = makeCtx({ llull, withLlullToken: true });
   const { itemIds } = await seedList(ctx, "Compra", ["Pa"]);
 
   const out = (await registry.run("todo.item-remove", { itemId: itemIds[0] }, ctx)) as any;
@@ -431,7 +432,7 @@ test("item-check en llista aliena privada: rebutjat", async () => {
   const ctx = makeCtx();
   const { listId, itemIds } = await seedList(ctx, "Privada", ["Pa"]);
   await assert.rejects(
-    () => registry.run("todo.item-check", { listId, itemIds: itemIds[0], userKey: "other" }, makeCtx()),
+    () => registry.run("todo.item-check", { listId, itemIds: itemIds[0], userKey: "other" }, makeCtx({ db: ctx.db })),
     /no trobada|privada|permís/i
   );
 });
@@ -476,8 +477,8 @@ test("list-search sense token: fallback DAO per nom, descripció i text d'items 
   const items = out.hits.filter((h: any) => h.type === "item");
   assert.ok(items.some((h: any) => /targeta de compra/i.test(h.title ?? "")), "match per text d'item");
 
-  // user "other" només veu les compartides
-  const otherView = (await registry.run("todo.list-search", { query: "cuina", userKey: "other" }, makeCtx())) as any;
+  // user "other" només veu les compartides (mateixa instal·lació)
+  const otherView = (await registry.run("todo.list-search", { query: "cuina", userKey: "other" }, makeCtx({ db: ctx.db }))) as any;
   assert.equal(otherView.total, 1);
   assert.ok(/paper de cuina/i.test(otherView.hits[0].title));
 });
@@ -493,26 +494,34 @@ test("dry-run: no executa el handler ni persisteix", async () => {
   assert.equal(after.lists.length, 0);
 });
 
-test("CLI: create → add → check → get amb HOME aïllat (memòria) i --json", () => {
+test("CLI: create amb HOME aïllat (memòria) i --json; destructiu sense --yes → CONFIRM_REQUIRED", () => {
   const home = mkdtempSync(join(tmpdir(), "gaudi-todolists-"));
   const env = { ...process.env, HOME: home, GAUDI_NO_ENV_LOAD: "1" };
   const run = (args: string[]) =>
     JSON.parse(execFileSync("node", [BIN, ...args, "--json"], { encoding: "utf8", env }));
 
+  // La memòria no persisteix entre processos: es prova UNA acció per procés
+  // (les cadenes add→check→get ja queden cobertes via registry.run i al sandbox).
   const created = run(["todo", "list-create", "Compra CLI"]);
   assert.equal(created.list.name, "Compra CLI");
-  const listId = created.list.id;
+  assert.equal(created.list.isMaster, false);
+  assert.equal(created.list.shared, false);
 
-  const item = run(["todo", "item-add", listId, "Pa"]);
-  assert.equal(item.item.done, false);
+  // input invàlid → error estructurat + exit 1
+  let validationError: any = null;
+  try {
+    execFileSync("node", [BIN, "todo", "list-create", "", "--json"], { env });
+  } catch (err) {
+    validationError = err as { status?: number; stdout?: Buffer };
+  }
+  assert.ok(validationError, "input buit ha de fallar");
+  assert.equal(validationError.status, 1);
+  assert.ok(String(validationError.stdout).includes('"error"'));
 
-  const checked = run(["todo", "item-check", listId, "all"]);
-  assert.equal(checked.completed, true);
-
-  // destructiu sense --yes → CONFIRM_REQUIRED + exit 2
+  // destructiu sense --yes → CONFIRM_REQUIRED + exit 2 (abans de tocar el DAO)
   let confirmError: any = null;
   try {
-    execFileSync("node", [BIN, "todo", "list-delete", listId, "--json"], { env });
+    execFileSync("node", [BIN, "todo", "list-delete", created.list.id, "--json"], { env });
   } catch (err) {
     confirmError = err as { status?: number; stdout?: Buffer };
   }
