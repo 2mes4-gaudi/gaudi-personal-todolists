@@ -43,3 +43,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.2] - 2026-08-17
 
 - feat(§8/§17): declara ui.app (app card del launcher — apps derivadas del directorio de features)
+
+## [0.1.3] - 2026-08-17
+
+- fix(api): loadUi normalitza el format ui {app, views}
