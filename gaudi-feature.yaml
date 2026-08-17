@@ -2,7 +2,7 @@
   "manifest": "1.1",
   "id": "personal.todolists",
   "name": "Llistes personals",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida.",
   "author": "Eric",
   "repository": {
@@ -14,8 +14,15 @@
     "cli": true,
     "api": true,
     "apiStack": "hono",
-    "agent": ["mastra", "mcp", "opencode"],
-    "database": ["postgres", "firestore"],
+    "agent": [
+      "mastra",
+      "mcp",
+      "opencode"
+    ],
+    "database": [
+      "postgres",
+      "firestore"
+    ],
     "ui": true
   },
   "security": {
@@ -34,10 +41,14 @@
         "repository": "https://github.com/2mes4-gaudi/gaudi-projects-manager"
       }
     ],
-    "packages": ["@gaudi/core@^1.0"],
+    "packages": [
+      "@gaudi/core@^1.0"
+    ],
     "mcp": [],
     "gcp": {
-      "services": ["pubsub.googleapis.com"]
+      "services": [
+        "pubsub.googleapis.com"
+      ]
     }
   },
   "actions": [
@@ -45,64 +56,159 @@
       "id": "todo.health",
       "destructive": false
     },
-    { "id": "todo.list-create", "destructive": false },
-    { "id": "todo.list-list", "destructive": false },
-    { "id": "todo.list-get", "destructive": false },
-    { "id": "todo.list-update", "destructive": false, "permission": "todolists.write" },
-    { "id": "todo.list-delete", "destructive": true, "confirm": "required", "permission": "todolists.delete" },
-    { "id": "todo.list-set-master", "destructive": false, "permission": "todolists.write" },
-    { "id": "todo.list-set-shared", "destructive": false, "permission": "todolists.write" },
-    { "id": "todo.list-instantiate", "destructive": false },
-    { "id": "todo.item-add", "destructive": false, "permission": "todolists.write" },
-    { "id": "todo.item-remove", "destructive": true, "confirm": "required", "permission": "todolists.write" },
-    { "id": "todo.item-check", "destructive": false, "permission": "todolists.write" },
-    { "id": "todo.item-uncheck", "destructive": false, "permission": "todolists.write" },
-    { "id": "todo.list-search", "destructive": false }
+    {
+      "id": "todo.list-create",
+      "destructive": false
+    },
+    {
+      "id": "todo.list-list",
+      "destructive": false
+    },
+    {
+      "id": "todo.list-get",
+      "destructive": false
+    },
+    {
+      "id": "todo.list-update",
+      "destructive": false,
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.list-delete",
+      "destructive": true,
+      "confirm": "required",
+      "permission": "todolists.delete"
+    },
+    {
+      "id": "todo.list-set-master",
+      "destructive": false,
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.list-set-shared",
+      "destructive": false,
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.list-instantiate",
+      "destructive": false
+    },
+    {
+      "id": "todo.item-add",
+      "destructive": false,
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.item-remove",
+      "destructive": true,
+      "confirm": "required",
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.item-check",
+      "destructive": false,
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.item-uncheck",
+      "destructive": false,
+      "permission": "todolists.write"
+    },
+    {
+      "id": "todo.list-search",
+      "destructive": false
+    }
   ],
   "credentials": [
     {
       "id": "todolists.llull-token",
       "type": "token",
-      "transport": ["env"],
+      "transport": [
+        "env"
+      ],
       "defaultTransport": "env",
       "envVar": "GAUDI_TODOLISTS_LLULL_TOKEN",
       "description": "Token del motor de cerca Llull (cerca semàntica canònica). Sense token: CRUD íntegre i cerca degradada a fallback DAO.",
       "required": false,
-      "usedBy": ["actions.todo.list-search", "indexing"]
+      "usedBy": [
+        "actions.todo.list-search",
+        "indexing"
+      ]
     },
     {
       "id": "todolists.firebase-sa",
       "type": "service-account-json",
-      "transport": ["env"],
+      "transport": [
+        "env"
+      ],
       "defaultTransport": "env",
       "envVar": "GAUDI_TODOLISTS_FIREBASE_SA",
       "description": "Service account JSON (Firestore + Pub/Sub publisher a la cua única gaudi.notifications).",
       "required": false,
-      "usedBy": ["messaging"]
+      "usedBy": [
+        "messaging"
+      ]
     }
   ],
   "data": {
     "firestore": {
       "project": "",
       "collections": [
-        { "path": "todolists/{listId}", "model": "TodoList" },
-        { "path": "todo_items/{itemId}", "model": "TodoItem" }
+        {
+          "path": "todolists/{listId}",
+          "model": "TodoList"
+        },
+        {
+          "path": "todo_items/{itemId}",
+          "model": "TodoItem"
+        }
       ]
     },
     "postgres": {
       "migrations": "db/migrations/",
       "tables": [
-        { "name": "todolists", "model": "TodoList" },
-        { "name": "todo_items", "model": "TodoItem" }
+        {
+          "name": "todolists",
+          "model": "TodoList"
+        },
+        {
+          "name": "todo_items",
+          "model": "TodoItem"
+        }
       ]
     }
   },
-  "ui": [
-    { "id": "lists", "kind": "table", "dataSource": "todo.list-list" },
-    { "id": "list-form", "kind": "form", "dataSource": "todo.list-create" },
-    { "id": "list-detail", "kind": "dashboard", "dataSource": "todo.list-get" },
-    { "id": "search", "kind": "dashboard", "dataSource": "todo.list-search" }
-  ],
+  "ui": {
+    "app": {
+      "id": "personal-todolists",
+      "name": "Llistes personals",
+      "emoji": "✅",
+      "url": "/personal-todolists/",
+      "order": 3
+    },
+    "views": [
+      {
+        "id": "lists",
+        "kind": "table",
+        "dataSource": "todo.list-list"
+      },
+      {
+        "id": "list-form",
+        "kind": "form",
+        "dataSource": "todo.list-create"
+      },
+      {
+        "id": "list-detail",
+        "kind": "dashboard",
+        "dataSource": "todo.list-get"
+      },
+      {
+        "id": "search",
+        "kind": "dashboard",
+        "dataSource": "todo.list-search"
+      }
+    ]
+  },
   "skills": [
     {
       "id": "todolists",
@@ -118,15 +224,22 @@
       "name": "Llistes personals Agent",
       "description": "Agente que opera las listas personales del usuario: crea listas y items, marca/desmarca (individual, en bloque o todo), instancia listas maestras, comparte listas y busca listas por propósito (nombre, descripción o texto de items).",
       "source": "own",
-      "tools": ["auto"],
+      "tools": [
+        "auto"
+      ],
       "instructions": "ai-assets/agents/todolists-agent.md",
-      "skills": ["todolists"]
+      "skills": [
+        "todolists"
+      ]
     }
   ],
   "messaging": {
     "queue": "gaudi.notifications",
     "topics": [
-      { "name": "gaudi.notifications", "mode": "publish" }
+      {
+        "name": "gaudi.notifications",
+        "mode": "publish"
+      }
     ]
   },
   "hooks": [],
