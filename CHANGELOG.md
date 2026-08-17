@@ -35,3 +35,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.0] - 2026-08-16
 
 - Primera versió: llistes personals (CRUD llistes+items, marcar bulk/all, mestres instanciables fresh-start, compartides col·laboratives, cerca Llull+fallback, events sobris, UI embebida). Tests: 24 unit + 13 E2E sandbox.
+
+## [0.1.1] - 2026-08-17
+
+- Acció health (SPEC §18): DAO + elements externs declarats, output estàndard {ok, components}, API /health servida des del registry, consumible per gaudi health i el healthcheck del runtime
