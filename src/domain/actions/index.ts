@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { healthOutput } from "../model/health.js";
+import { checkHealth } from "../../services/health-service.js";
 import { createRegistry, type ActionRegistry, type ServiceContext } from "@gaudi/core";
 import type { TodoContext } from "../../ports/context.js";
 import {
@@ -163,6 +165,16 @@ export function buildRegistry(): ActionRegistry {
     inputSchema: listSearchInput,
     outputSchema: searchOutput,
     handler: async (input, ctx) => searchLists(input, ctx),
+    meta: { destructive: false },
+  });
+
+  // Health (SPEC §18 nivell 1): DAO + elements externs declarats.
+  register(registry, {
+    id: "todo.health",
+    description: "Health del feature: DAO + elements externs (SPEC §18).",
+    inputSchema: z.object({}),
+    outputSchema: healthOutput,
+    handler: async (_input, ctx) => checkHealth(ctx),
     meta: { destructive: false },
   });
 

@@ -131,9 +131,10 @@ const EXPECTED_ACTIONS = [
   "todo.list-delete", "todo.list-set-master", "todo.list-set-shared",
   "todo.list-instantiate", "todo.item-add", "todo.item-remove",
   "todo.item-check", "todo.item-uncheck", "todo.list-search",
+  "todo.health",
 ];
 
-test("registry expone exactamente las 13 acciones declaradas", () => {
+test("registry expone exactamente las 14 acciones declaradas", () => {
   const registry = buildRegistry();
   const ids = registry.list().map((a) => a.id).sort();
   assert.deepEqual(ids, [...EXPECTED_ACTIONS].sort());

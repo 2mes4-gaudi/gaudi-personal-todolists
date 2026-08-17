@@ -69,9 +69,15 @@ function loadUi(): Array<{ id: string; kind: string; dataSource: string }> {
 export function createApp(registry: ActionRegistry, ctxFactory: () => TodoContext) {
   const app = new Hono();
 
-  app.get("/health", (c) =>
-    c.json({ ok: true, feature: FEATURE, actions: registry.list().map((a) => a.id) })
-  );
+  app.get("/health", async (c) => {
+    // SPEC §18: serveix l'ACCIÓ del registry (mateixa font de veritat que el CLI)
+    try {
+      const ctx = ctxFactory();
+      return c.json(await registry.run("todo.health", {}, ctx));
+    } catch (err) {
+      return c.json({ ok: false, components: [{ name: "health", ok: false, detail: (err as Error).message }] }, 500);
+    }
+  });
 
   const runAction = async (c: Context, id: string, input: Record<string, unknown>) => {
     try {
