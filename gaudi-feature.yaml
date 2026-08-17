@@ -2,7 +2,7 @@
   "manifest": "1.1",
   "id": "personal.todolists",
   "name": "Llistes personals",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida.",
   "author": "Eric",
   "repository": {

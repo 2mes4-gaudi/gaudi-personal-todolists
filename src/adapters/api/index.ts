@@ -54,8 +54,16 @@ function describeAction(action: { id: string; description: string; inputSchema: 
 function loadUi(): Array<{ id: string; kind: string; dataSource: string }> {
   try {
     const file = fileURLToPath(new URL("../../../gaudi-feature.yaml", import.meta.url));
-    const m = YAML.parse(readFileSync(file, "utf8")) as { ui?: Array<{ id: string; kind: string; dataSource: string }> };
-    return m.ui ?? [];
+    const m = YAML.parse(readFileSync(file, "utf8")) as {
+      ui?:
+        | Array<{ id: string; kind: string; dataSource: string }>
+        | { app?: unknown; views?: Array<{ id: string; kind: string; dataSource: string }> };
+    };
+    // Format v1.1 (array) i format launcher v0.4+ ({ app, views }): normalitzem.
+    const ui = m.ui;
+    if (Array.isArray(ui)) return ui;
+    if (ui && typeof ui === "object" && Array.isArray(ui.views)) return ui.views;
+    return [];
   } catch {
     return [];
   }
