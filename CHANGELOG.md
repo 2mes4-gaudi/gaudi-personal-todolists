@@ -39,3 +39,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.1] - 2026-08-17
 
 - Acció health (SPEC §18): DAO + elements externs declarats, output estàndard {ok, components}, API /health servida des del registry, consumible per gaudi health i el healthcheck del runtime
+
+## [0.1.2] - 2026-08-17
+
+- feat(§8/§17): declara ui.app (app card del launcher — apps derivadas del directorio de features)
