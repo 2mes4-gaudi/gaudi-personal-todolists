@@ -47,3 +47,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.3] - 2026-08-17
 
 - fix(api): loadUi normalitza el format ui {app, views}
+
+## [0.1.4] - 2026-08-21
+
+- Fix DAO no persisteix: mapping user.firebase-sa + fail-hard (D1) + @gaudi/core v1.4.1 (bus snake_case).
