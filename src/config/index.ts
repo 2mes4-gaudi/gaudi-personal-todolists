@@ -1,8 +1,16 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import YAML from "yaml";
 import type { DbConfig } from "@gaudi/core";
+
+/** Config global absent: l'únic cas legítim de degradació a memòria (CLI standalone). */
+export class NoGaudiConfigError extends Error {
+  constructor(public readonly path: string) {
+    super(`No se encuentra ${path}`);
+    this.name = "NoGaudiConfigError";
+  }
+}
 
 export interface FpConfig {
   database: {
@@ -16,17 +24,18 @@ export interface FpConfig {
   };
 }
 
-const DEFAULT_PATH = join(homedir(), ".gaudi", "gaudi.yaml");
+/** Path de la config global, resolt PER CRIDA (permet aïllar HOME a tests). */
+export function gaudiYamlPath(): string {
+  return join(homedir(), ".gaudi", "gaudi.yaml");
+}
 
 /** Config global de la plataforma: ~/.gaudi/gaudi.yaml. El usuario elige DAO y backend una vez. */
-export function loadFpConfig(path = DEFAULT_PATH): FpConfig {
+export function loadFpConfig(path = gaudiYamlPath()): FpConfig {
+  if (!existsSync(path)) throw new NoGaudiConfigError(path);
   try {
-    const raw = readFileSync(path, "utf8");
-    return YAML.parse(raw) as FpConfig;
-  } catch {
-    throw new Error(
-      `No se encuentra ${path}. Ejecuta 'gaudi init' para crear la configuración global.`
-    );
+    return YAML.parse(readFileSync(path, "utf8")) as FpConfig;
+  } catch (err) {
+    throw new Error(`No s'ha pogut llegir ${path}: ${(err as Error).message}`);
   }
 }
 

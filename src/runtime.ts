@@ -9,8 +9,8 @@ import type { TodoContext } from "./ports/context.js";
 import type { LlullSearch } from "./ports/llull.js";
 import { buildRegistry } from "./domain/actions/index.js";
 import { createLlullSearch } from "./adapters/llull/http.js";
-import { createEnvCredentialProvider, noopCredentials } from "./config/credentials.js";
-import { loadFpConfig, toDbConfig } from "./config/index.js";
+import { createEnvCredentialProvider, noopCredentials, stderrLogger } from "./config/credentials.js";
+import { loadFpConfig, toDbConfig, NoGaudiConfigError } from "./config/index.js";
 
 function readManifestMeta(): { id: string; version: string } {
   try {
@@ -56,24 +56,33 @@ export interface TodoRuntime {
 
 async function loadDb(opts: RuntimeOptions, credentials: CredentialProvider, logger: Logger): Promise<KVStore> {
   if (opts.db) return opts.db;
-  if (!opts.noConfig) {
-    try {
-      const config = loadFpConfig();
-      return await createStore(
-        toDbConfig(config),
-        credentials,
-        config.credentials?.firestoreCredentialId
+  if (opts.noConfig) return makeMemoryDb();
+  let config;
+  try {
+    config = loadFpConfig();
+  } catch (err) {
+    if (err instanceof NoGaudiConfigError) {
+      logger.warn(
+        `[personal.todolists] sense config global (${err.path}): DAO de MEMÒRIA, les dades NO persisteixen entre invocacions. Executa 'gaudi init' per configurar el DAO real.`
       );
-    } catch (err) {
-      logger.warn(`[personal.todolists] sense DAO real → memòria: ${(err as Error).message}`);
+      return makeMemoryDb();
     }
+    throw err;
   }
-  return makeMemoryDb();
+  try {
+    return await createStore(toDbConfig(config), credentials, config.credentials?.firestoreCredentialId);
+  } catch (err) {
+    throw new Error(
+      `DAO configurat però no disponible: ${(err as Error).message}. ` +
+        `Revisa ~/.gaudi/gaudi.yaml i les credencials (per user.firebase-sa: env GAUDI_USER_FIREBASE_SA). ` +
+        `NO es fa fallback a memòria: les dades es perdrien entre invocacions.`
+    );
+  }
 }
 
 /** Arrel de composició: aquí (i només aquí) es llegeix process.env. */
 export async function buildRuntime(opts: RuntimeOptions = {}): Promise<TodoRuntime> {
-  const logger = opts.logger ?? console;
+  const logger = opts.logger ?? stderrLogger();
   const credentials = opts.credentials ?? (opts.noConfig ? noopCredentials : createEnvCredentialProvider());
   const db = await loadDb(opts, credentials, logger);
   const clock = opts.clock ?? (() => new Date());

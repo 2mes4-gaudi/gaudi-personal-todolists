@@ -2,7 +2,7 @@
   "manifest": "1.1",
   "id": "personal.todolists",
   "name": "Llistes personals",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida.",
   "author": "Eric",
   "repository": {
@@ -147,6 +147,16 @@
       "required": false,
       "usedBy": [
         "messaging"
+      ]
+    },
+    {
+      "id": "user.firebase-sa",
+      "type": "service-account-json",
+      "envVar": "GAUDI_USER_FIREBASE_SA",
+      "description": "Credential DAO de plataforma (owner: user.profile): el resol aquest feature quan ~/.gaudi/gaudi.yaml tria firestore. Sense ell, fail-hard (cap fallback a memòria).",
+      "required": false,
+      "usedBy": [
+        "database"
       ]
     }
   ],

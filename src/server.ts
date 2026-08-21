@@ -6,7 +6,14 @@ import { fileURLToPath } from "node:url";
 import { buildRuntime } from "./runtime.js";
 import { createApp } from "./adapters/api/index.js";
 
-const { registry, ctx } = await buildRuntime();
+let runtime: Awaited<ReturnType<typeof buildRuntime>>;
+try {
+  runtime = await buildRuntime();
+} catch (err) {
+  process.stderr.write(`✗ personal.todolists no pot arrencar: ${(err as Error).message}\n`);
+  process.exit(1);
+}
+const { registry, ctx } = runtime;
 const app = createApp(registry, () => ctx);
 
 // UI embebida (modelo unificado API+UI): estáticos + SPA fallback (SPEC §8).

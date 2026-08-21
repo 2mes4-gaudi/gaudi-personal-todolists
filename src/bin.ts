@@ -14,5 +14,12 @@ try {
   // defaults
 }
 
-const { registry, ctx } = await buildRuntime();
+let runtime: Awaited<ReturnType<typeof buildRuntime>>;
+try {
+  runtime = await buildRuntime();
+} catch (err) {
+  process.stderr.write(`✗ personal.todolists no pot arrencar: ${(err as Error).message}\n`);
+  process.exit(1);
+}
+const { registry, ctx } = runtime;
 buildTodoCli(registry, info, () => ctx).parse(process.argv);
