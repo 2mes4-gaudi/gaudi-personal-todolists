@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CREDENTIAL_ENV } from "../dist/config/credentials.js";
+import { createEnvCredentialProvider } from "../dist/config/credentials.js";
+import { PLATFORM_CORE_ENV } from "@gaudi/core";
 import { buildRuntime } from "../dist/runtime.js";
 
 let savedHome: string | undefined;
@@ -26,8 +27,13 @@ afterEach(() => {
   if (tmpHome) rmSync(tmpHome, { recursive: true, force: true });
 });
 
-test("CREDENTIAL_ENV mapeja user.firebase-sa → GAUDI_USER_FIREBASE_SA", () => {
-  assert.equal(CREDENTIAL_ENV["user.firebase-sa"], "GAUDI_USER_FIREBASE_SA");
+test("cadena llull-token i firebase-sa: cau al core", async () => {
+  process.env[PLATFORM_CORE_ENV.llullToken] = "core-llull";
+  process.env.GAUDI_USER_FIREBASE_SA = JSON.stringify({ client_email: "core@x" });
+  const p = createEnvCredentialProvider();
+  assert.equal(await p.get("todolists.llull-token"), "core-llull");
+  const sa = (await p.get("todolists.firebase-sa")) as { client_email: string };
+  assert.equal(sa.client_email, "core@x");
 });
 
 test("fail-hard: config firestore + credencial no disponible → reject explícit", async () => {
