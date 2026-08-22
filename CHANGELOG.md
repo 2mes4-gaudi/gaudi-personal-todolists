@@ -51,3 +51,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.4] - 2026-08-21
 
 - Fix DAO no persisteix: mapping user.firebase-sa + fail-hard (D1) + @gaudi/core v1.4.1 (bus snake_case).
+
+## [0.1.5] - 2026-08-22
+
+- Credencials en cadena (@gaudi/core v1.5.0): llull-token i firebase-sa cau al core per defecte.
