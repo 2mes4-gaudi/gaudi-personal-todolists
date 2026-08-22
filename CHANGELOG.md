@@ -59,3 +59,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.5] - 2026-08-22
 
 - Test del contracte de cadenes al dia.
+
+## [0.1.6] - 2026-08-22
+
+- Test del contracte de cadenes al dia (v0.1.5 va sortir amb 1 test fallit per descuit — corregit).
