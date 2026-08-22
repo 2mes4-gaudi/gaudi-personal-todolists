@@ -55,3 +55,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.5] - 2026-08-22
 
 - Credencials en cadena (@gaudi/core v1.5.0): llull-token i firebase-sa cau al core per defecte.
+
+## [0.1.5] - 2026-08-22
+
+- Test del contracte de cadenes al dia.
