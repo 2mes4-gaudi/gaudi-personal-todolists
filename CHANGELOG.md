@@ -71,3 +71,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.2.1] - 2026-08-24
 
 - feat(UI): cerca dins de l'app dels items (SearchField + useListSearch de @gaudi/ui v0.2.0); empty state de cap resultat.
+
+## [0.2.2] - 2026-08-24
+
+- fix(UI): paths d'API relatius (api/...) — el 404 /api/lists era per paths absoluts; el gateway munta l'API a /personal-todolists/.
