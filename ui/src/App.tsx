@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AppShell, Badge, Button, Dialog, EmptyState, Field, Icon, Input, ListItem, Stack, Textarea, Toast, type ToastKind } from "@gaudi/ui";
+import { AppShell, Badge, Button, Dialog, EmptyState, Field, Icon, Input, ListItem, SearchField, Stack, Textarea, Toast, useListSearch, type ToastKind } from "@gaudi/ui";
 import { api, type SearchHit, type TodoItem, type TodoList } from "./api";
 
 // ── Tipus de vista ──────────────────────────────────────────────────────────
@@ -308,6 +308,11 @@ function DetailView({ id, back, notify }: { id: string; back: () => void; notify
 
   const done = items.filter((i) => i.done).length;
   const allDone = items.length > 0 && done === items.length;
+  // Cerca DINS de l'app dels items (UI-STANDARD §5): filtre JS, sense index.
+  const itemSearch = useListSearch(items, (i) => `${i.text} ${i.done ? "fet" : "pendent"}`, {
+    placeholder: "Cerca items…",
+    ariaLabel: "Cerca items",
+  });
 
   return (
     <Stack>
@@ -356,26 +361,33 @@ function DetailView({ id, back, notify }: { id: string; back: () => void; notify
         <EmptyState message="Cap item encara. Afegeix el primer ↓" />
       ) : (
         <Stack>
-          {items.map((item) => (
-            <ListItem
-              key={item.id}
-              title={
-                <span style={item.done ? { textDecoration: "line-through", color: "var(--gaudi-muted)" } : undefined}>
-                  {item.text}
-                </span>
-              }
-              actions={
-                <div style={{ display: "flex", gap: 2 }}>
-                  <button className="gaudi-icon-btn" type="button" aria-label={item.done ? `Desmarca ${item.text}` : `Marca ${item.text}`} aria-pressed={item.done} onClick={() => void toggle(item)}>
-                    <Icon name="check" />
-                  </button>
-                  <button className="gaudi-icon-btn gaudi-icon-btn--danger" type="button" aria-label={`Esborra ${item.text}`} onClick={() => setConfirmItem(item.id)}>
-                    <Icon name="x" />
-                  </button>
-                </div>
-              }
-            />
-          ))}
+          <SearchField {...itemSearch.inputProps} />
+          {itemSearch.filtered.length === 0 ? (
+            <EmptyState message="Cap item no coincideix amb la cerca." />
+          ) : (
+            <Stack>
+              {itemSearch.filtered.map((item) => (
+                <ListItem
+                  key={item.id}
+                  title={
+                    <span style={item.done ? { textDecoration: "line-through", color: "var(--gaudi-muted)" } : undefined}>
+                      {item.text}
+                    </span>
+                  }
+                  actions={
+                    <div style={{ display: "flex", gap: 2 }}>
+                      <button className="gaudi-icon-btn" type="button" aria-label={item.done ? `Desmarca ${item.text}` : `Marca ${item.text}`} aria-pressed={item.done} onClick={() => void toggle(item)}>
+                        <Icon name="check" />
+                      </button>
+                      <button className="gaudi-icon-btn gaudi-icon-btn--danger" type="button" aria-label={`Esborra ${item.text}`} onClick={() => setConfirmItem(item.id)}>
+                        <Icon name="x" />
+                      </button>
+                    </div>
+                  }
+                />
+              ))}
+            </Stack>
+          )}
         </Stack>
       )}
 
