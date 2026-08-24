@@ -63,3 +63,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.1.6] - 2026-08-22
 
 - Test del contracte de cadenes al dia (v0.1.5 va sortir amb 1 test fallit per descuit — corregit).
+
+## [0.2.0] - 2026-08-24
+
+- UI estàndard amb @gaudi/ui (UI-STANDARD.md): AppShell sense h1 propi, components del paquet, destructives amb Dialog, eliminat CSS propi. Funcionalitat intacta.
