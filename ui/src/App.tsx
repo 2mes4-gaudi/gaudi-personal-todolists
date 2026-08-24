@@ -1,55 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { AppShell, Badge, Button, Dialog, EmptyState, Field, Icon, Input, ListItem, Stack, Textarea, Toast, type ToastKind } from "@gaudi/ui";
 import { api, type SearchHit, type TodoItem, type TodoList } from "./api";
-import "./styles.css";
-
-// ── Icones (Lucide, stroke consistent) ─────────────────────────────────────
-
-const Icon = ({ d, ...p }: { d: string } & React.SVGProps<SVGSVGElement>) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    {...p}
-  >
-    <path d={d} />
-  </svg>
-);
-const IPlus = () => <Icon d="M12 5v14M5 12h14" />;
-const ISearch = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-    <circle cx="11" cy="11" r="7" />
-    <path d="m21 21-4.3-4.3" />
-  </svg>
-);
-const IBack = () => <Icon d="m15 18-6-6 6-6" />;
-const ICheck = () => <Icon d="M20 6 9 17l-5-5" />;
-const IX = () => <Icon d="M18 6 6 18M6 6l12 12" />;
-const ITrash = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-  </svg>
-);
-const ICopy = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="9" y="9" width="12" height="12" rx="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
-const IShare = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-    <path d="m16 6-4-4-4 4M12 2v13" />
-  </svg>
-);
-const IStar = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01z" />
-  </svg>
-);
 
 // ── Tipus de vista ──────────────────────────────────────────────────────────
 
@@ -59,12 +10,17 @@ type View = { kind: "lists" } | { kind: "detail"; id: string } | { kind: "search
 
 export default function App() {
   const [view, setView] = useState<View>({ kind: "lists" });
+  const [toast, setToast] = useState<{ kind: ToastKind; text: string } | null>(null);
+
+  const notify = useCallback((kind: ToastKind, text: string) => setToast({ kind, text }), []);
+
   return (
-    <div className="app">
+    <AppShell>
       {view.kind === "lists" && <ListsView open={(id) => setView({ kind: "detail", id })} onSearch={(q) => setView({ kind: "search", q })} />}
-      {view.kind === "detail" && <DetailView id={view.id} back={() => setView({ kind: "lists" })} />}
+      {view.kind === "detail" && <DetailView id={view.id} back={() => setView({ kind: "lists" })} notify={notify} />}
       {view.kind === "search" && <SearchView q={view.q} back={() => setView({ kind: "lists" })} open={(id) => setView({ kind: "detail", id })} />}
-    </div>
+      {toast && <Toast kind={toast.kind}>{toast.text}</Toast>}
+    </AppShell>
   );
 }
 
@@ -75,6 +31,21 @@ function ListsView({ open, onSearch }: { open: (id: string) => void; onSearch: (
   const [error, setError] = useState("");
   const [mastersOnly, setMastersOnly] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [isMaster, setIsMaster] = useState(false);
+  const [shared, setShared] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const onDone = useCallback((id: string) => {
+    setCreating(false);
+    setName("");
+    setDescription("");
+    setIsMaster(false);
+    setShared(false);
+    open(id);
+  }, [open]);
 
   const reload = useCallback(async () => {
     try {
@@ -88,85 +59,96 @@ function ListsView({ open, onSearch }: { open: (id: string) => void; onSearch: (
   useEffect(() => { void reload(); }, [reload]);
 
   return (
-    <>
-      <header className="topbar">
-        <h1>Llistes</h1>
-        <form
-          className="searchbar"
-          style={{ flex: 1 }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            const q = new FormData(e.currentTarget).get("q");
-            if (typeof q === "string" && q.trim()) onSearch(q.trim());
-          }}
-        >
-          <input name="q" type="text" placeholder="Cerca llistes…" aria-label="Cerca llistes" />
-        </form>
-        <button className="icon-btn" aria-label="Cerca" onClick={() => { const el = document.querySelector<HTMLInputElement>('input[name="q"]'); el?.focus(); }}>
-          <ISearch />
-        </button>
-        <button className="icon-btn" aria-label="Nova llista" onClick={() => setCreating(true)}>
-          <IPlus />
-        </button>
-      </header>
+    <Stack>
+      <form
+        style={{ display: "flex", gap: 8 }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = new FormData(e.currentTarget).get("q");
+          if (typeof q === "string" && q.trim()) onSearch(q.trim());
+        }}
+      >
+        <Input name="q" type="text" placeholder="Cerca llistes…" aria-label="Cerca llistes" style={{ flex: 1 }} />
+        <Button type="submit" aria-label="Cerca" icon={<Icon name="search" />} />
+      </form>
 
-      <main className="content">
-        <div className="filters">
-          <button className="chip" aria-pressed={mastersOnly} onClick={() => setMastersOnly((v) => !v)}>
-            <IStar /> Mestres
-          </button>
-        </div>
-        {error && <p className="warn" role="alert">{error}</p>}
-        {lists === null ? (
-          <p className="empty">Carregant…</p>
-        ) : lists.length === 0 ? (
-          <p className="empty">{mastersOnly ? "Encara no hi ha llistes mestres." : "Encara no hi ha llistes. Crea la primera amb +"} </p>
-        ) : (
-          lists.map((l) => (
-            <ListCard key={l.id} list={l} onOpen={() => open(l.id)} />
-          ))
-        )}
-      </main>
-
-      {creating && (
-        <>
-          <button className="sheet-backdrop" aria-label="Tanca" onClick={() => setCreating(false)} />
-          <CreateSheet
-            onDone={(id) => { setCreating(false); open(id); }}
-            onCancel={() => setCreating(false)}
-          />
-        </>
-      )}
-    </>
-  );
-}
-
-function ListCard({ list, onOpen }: { list: TodoList; onOpen: () => void }) {
-  return (
-    <button className="list-card" onClick={onOpen}>
-      <div className="body">
-        <div className="name">{list.name}</div>
-        {list.description && <div className="meta">{list.description}</div>}
-        <div className="badges">
-          {list.isMaster && <span className="badge master">mestra</span>}
-          {list.shared && <span className="badge shared">compartida</span>}
-          {list.sourceMasterId && <span className="badge done">instància</span>}
-        </div>
+      <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+        <Button variant="ghost" aria-pressed={mastersOnly} onClick={() => setMastersOnly((v) => !v)}>
+          <Icon name="folder" size={18} /> Mestres
+        </Button>
+        <Button icon={<Icon name="plus" />} onClick={() => setCreating(true)}>Nova llista</Button>
       </div>
-    </button>
+
+      {error && <Toast kind="error">{error}</Toast>}
+      {lists === null ? (
+        <p className="gaudi-muted">Carregant…</p>
+      ) : lists.length === 0 ? (
+        <EmptyState message={mastersOnly ? "Encara no hi ha llistes mestres." : "Encara no hi ha llistes. Crea la primera amb Nova llista."} />
+      ) : (
+        <Stack>
+          {lists.map((l) => (
+            <ListItem
+              key={l.id}
+              title={l.name}
+              description={l.description}
+              meta={
+                <div style={{ display: "flex", gap: 4 }}>
+                  {l.isMaster && <Badge variant="accent">mestra</Badge>}
+                  {l.shared && <Badge variant="success">compartida</Badge>}
+                  {l.sourceMasterId && <Badge variant="muted">instància</Badge>}
+                </div>
+              }
+              onClick={() => open(l.id)}
+            />
+          ))}
+        </Stack>
+      )}
+
+      <CreateForm
+        open={creating}
+        onCancel={() => setCreating(false)}
+        onDone={onDone}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        isMaster={isMaster}
+        setIsMaster={setIsMaster}
+        shared={shared}
+        setShared={setShared}
+        error={error}
+        setError={setError}
+        busy={busy}
+        setBusy={setBusy}
+        nameError={nameError}
+        setNameError={setNameError}
+      />
+    </Stack>
   );
 }
 
-function CreateSheet({ onDone, onCancel }: { onDone: (id: string) => void; onCancel: () => void }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isMaster, setIsMaster] = useState(false);
-  const [shared, setShared] = useState(false);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-
+function CreateForm({ open, onCancel, onDone, name, setName, description, setDescription, isMaster, setIsMaster, shared, setShared, error, setError, busy, setBusy, nameError, setNameError }: {
+  open: boolean;
+  onCancel: () => void;
+  onDone: (id: string) => void;
+  name: string;
+  setName: (v: string) => void;
+  description: string;
+  setDescription: (v: string) => void;
+  isMaster: boolean;
+  setIsMaster: (v: boolean) => void;
+  shared: boolean;
+  setShared: (v: boolean) => void;
+  error: string;
+  setError: (v: string) => void;
+  busy: boolean;
+  setBusy: (v: boolean) => void;
+  nameError: string;
+  setNameError: (v: string) => void;
+}) {
   const submit = async () => {
-    if (!name.trim()) { setError("El nom és obligatori"); return; }
+    if (!name.trim()) { setNameError("El nom és obligatori"); return; }
+    if (busy) return;
     setBusy(true);
     try {
       const out = await api.createList({
@@ -183,48 +165,55 @@ function CreateSheet({ onDone, onCancel }: { onDone: (id: string) => void; onCan
   };
 
   return (
-    <div className="sheet" role="dialog" aria-label="Nova llista">
-      <form
-        onSubmit={(e) => { e.preventDefault(); void submit(); }}
-        style={{ display: "flex", flexDirection: "column", gap: 12 }}
-      >
-        <div className="field">
-          <label htmlFor="new-name">Nom</label>
-          <input id="new-name" type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-        </div>
-        <div className="field">
-          <label htmlFor="new-desc">Descripció (propòsit de la llista)</label>
-          <textarea id="new-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-        <div className="check-row">
-          <input id="new-master" type="checkbox" checked={isMaster} onChange={(e) => setIsMaster(e.target.checked)} />
-          <label htmlFor="new-master">Llista mestra (plantilla instanciable)</label>
-        </div>
-        <div className="check-row">
-          <input id="new-shared" type="checkbox" checked={shared} onChange={(e) => setShared(e.target.checked)} />
-          <label htmlFor="new-shared">Compartida amb tothom</label>
-        </div>
-        {error && <p className="error" role="alert">{error}</p>}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={onCancel}>Cancel·la</button>
-          <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={busy}>
-            {busy ? "Creant…" : "Crea"}
-          </button>
-        </div>
-      </form>
-    </div>
+    <Dialog
+      open={open}
+      title="Nova llista"
+      confirmLabel={busy ? "Creant…" : "Crea"}
+      cancelLabel="Cancel·la"
+      loading={busy}
+      onCancel={onCancel}
+      onConfirm={() => void submit()}
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        <Field label="Nom" htmlFor="new-name" error={nameError}>
+          <Input
+            id="new-name"
+            type="text"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setNameError(""); }}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }}
+          />
+        </Field>
+        <Field label="Descripció (propòsit de la llista)" htmlFor="new-desc">
+          <Textarea id="new-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
+        <label style={{ display: "flex", gap: 10, cursor: "pointer", alignItems: "center" }}>
+          <input type="checkbox" checked={isMaster} style={{ width: 20, height: 20, accentColor: "var(--gaudi-primary)" }}
+            onChange={(e) => setIsMaster(e.target.checked)} />
+          <span style={{ fontWeight: 600, fontSize: 14 }}>Llista mestra (plantilla instanciable)</span>
+        </label>
+        <label style={{ display: "flex", gap: 10, cursor: "pointer", alignItems: "center" }}>
+          <input type="checkbox" checked={shared} style={{ width: 20, height: 20, accentColor: "var(--gaudi-primary)" }}
+            onChange={(e) => setShared(e.target.checked)} />
+          <span style={{ fontWeight: 600, fontSize: 14 }}>Compartida amb tothom</span>
+        </label>
+        {error && <Toast kind="error">{error}</Toast>}
+      </div>
+    </Dialog>
   );
 }
 
 // ── Vista: detall d'una llista ──────────────────────────────────────────────
 
-function DetailView({ id, back }: { id: string; back: () => void }) {
+function DetailView({ id, back, notify }: { id: string; back: () => void; notify: (kind: ToastKind, text: string) => void }) {
   const [list, setList] = useState<TodoList | null>(null);
   const [items, setItems] = useState<TodoItem[]>([]);
   const [error, setError] = useState("");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmItem, setConfirmItem] = useState<string | null>(null);
   const [instantiating, setInstantiating] = useState(false);
 
   const reload = useCallback(async () => {
@@ -277,7 +266,6 @@ function DetailView({ id, back }: { id: string; back: () => void }) {
   };
 
   const removeItem = async (itemId: string) => {
-    if (!window.confirm("Esborrar aquest item?")) return;
     try {
       await api.removeItem(itemId);
       setItems((prev) => prev.filter((i) => i.id !== itemId));
@@ -300,8 +288,8 @@ function DetailView({ id, back }: { id: string; back: () => void }) {
     setInstantiating(true);
     try {
       const out = await api.instantiate(id);
+      notify("ok", `Instància creada: ${out.list.name} (${out.items.length} items pendents)`);
       back();
-      window.alert(`Instància creada: ${out.list.name} (${out.items.length} items pendents)`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -322,98 +310,122 @@ function DetailView({ id, back }: { id: string; back: () => void }) {
   const allDone = items.length > 0 && done === items.length;
 
   return (
-    <>
-      <header className="topbar">
-        <button className="icon-btn" aria-label="Enrere" onClick={back}><IBack /></button>
-        <h1>{list?.name ?? "…"}</h1>
+    <Stack>
+      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+        <button className="gaudi-icon-btn" type="button" aria-label="Enrere" onClick={back}>
+          <Icon name="chevron-left" />
+        </button>
+        <h2 style={{ flex: 1, margin: 0 }}>{list?.name ?? "…"}</h2>
         {list?.isMaster && (
-          <button className="icon-btn" aria-label="Instancia aquesta mestra" title="Instancia" onClick={() => void instantiate()} disabled={instantiating}>
-            <ICopy />
+          <button className="gaudi-icon-btn" type="button" aria-label="Instancia aquesta mestra" title="Instancia" disabled={instantiating} onClick={() => void instantiate()}>
+            <Icon name="refresh-cw" />
           </button>
         )}
         <button
-          className="icon-btn"
+          className="gaudi-icon-btn"
+          type="button"
           aria-label={list?.shared ? "Deixa de compartir" : "Comparteix amb tothom"}
           title={list?.shared ? "Deixa de compartir" : "Comparteix"}
           onClick={() => void toggleFlag((v) => api.setShared(id, v), !list?.shared)}
         >
-          <IShare />
+          <Icon name="globe" />
         </button>
         <button
-          className="icon-btn"
+          className="gaudi-icon-btn"
+          type="button"
           aria-label={list?.isMaster ? "Treu el flag de mestra" : "Marca com a mestra"}
           title="Mestra"
           onClick={() => void toggleFlag((v) => api.setMaster(id, v), !list?.isMaster)}
         >
-          <IStar />
+          <Icon name="folder" />
         </button>
-        <button className="icon-btn danger" aria-label="Esborra la llista" title="Esborra" onClick={() => setConfirmDelete(true)}>
-          <ITrash />
+        <button className="gaudi-icon-btn gaudi-icon-btn--danger" type="button" aria-label="Esborra la llista" title="Esborra" onClick={() => setConfirmDelete(true)}>
+          <Icon name="trash" />
         </button>
-      </header>
-
-      <main className="content">
-        {error && <p className="warn" role="alert">{error}</p>}
-        {list?.description && <p style={{ margin: 0, color: "var(--gaudi-muted)" }}>{list.description}</p>}
-        <div className="badges">
-          {list?.isMaster && <span className="badge master">mestra</span>}
-          {list?.shared && <span className="badge shared">compartida</span>}
-          {allDone && <span className="badge done">completada</span>}
-        </div>
-
-        <div className="items-card">
-          {items.length === 0 ? (
-            <p className="empty">Cap item encara. Afegeix el primer ↓</p>
-          ) : (
-            items.map((item) => (
-              <div key={item.id} className={`item${item.done ? " done" : ""}`}>
-                <button className="check" aria-label={item.done ? `Desmarca ${item.text}` : `Marca ${item.text}`} aria-pressed={item.done} onClick={() => void toggle(item)}>
-                  <ICheck />
-                </button>
-                <span className="text">{item.text}</span>
-                <button className="remove" aria-label={`Esborra ${item.text}`} onClick={() => void removeItem(item.id)}>
-                  <IX />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-
-        {items.length > 0 && done < items.length && (
-          <button className="btn ghost block" onClick={() => void markAll()}>Marca-ho tot ({items.length - done})</button>
-        )}
-        <p className="empty" style={{ padding: 0 }}>{done}/{items.length} fets</p>
-      </main>
-
-      <div className="bottom">
-        <form className="add-form" onSubmit={(e) => { e.preventDefault(); void addItem(); }}>
-          <input
-            type="text"
-            value={text}
-            placeholder="Afegeix un item…"
-            aria-label="Nou item"
-            onChange={(e) => setText(e.target.value)}
-          />
-          <button type="submit" className="btn cta" disabled={busy || !text.trim()}>Afegeix</button>
-        </form>
       </div>
 
-      {confirmDelete && list && (
-        <>
-          <button className="sheet-backdrop" aria-label="Tanca" onClick={() => setConfirmDelete(false)} />
-          <div className="sheet" role="dialog" aria-label="Esborrar llista">
-            <strong>Esborrar «{list.name}»?</strong>
-            <p style={{ margin: 0, color: "var(--gaudi-muted)" }}>
-              S'esborrarà la llista i els seus {items.length} items. Acció irreversible.
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn ghost" style={{ flex: 1 }} onClick={() => setConfirmDelete(false)}>Cancel·la</button>
-              <button className="btn danger" style={{ flex: 1 }} onClick={() => void del()}>Esborra</button>
-            </div>
-          </div>
-        </>
+      {error && <Toast kind="error">{error}</Toast>}
+      {list?.description && <p className="gaudi-muted" style={{ margin: 0 }}>{list.description}</p>}
+      <div style={{ display: "flex", gap: 4 }}>
+        {list?.isMaster && <Badge variant="accent">mestra</Badge>}
+        {list?.shared && <Badge variant="success">compartida</Badge>}
+        {allDone && <Badge variant="success">completada</Badge>}
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyState message="Cap item encara. Afegeix el primer ↓" />
+      ) : (
+        <Stack>
+          {items.map((item) => (
+            <ListItem
+              key={item.id}
+              title={
+                <span style={item.done ? { textDecoration: "line-through", color: "var(--gaudi-muted)" } : undefined}>
+                  {item.text}
+                </span>
+              }
+              actions={
+                <div style={{ display: "flex", gap: 2 }}>
+                  <button className="gaudi-icon-btn" type="button" aria-label={item.done ? `Desmarca ${item.text}` : `Marca ${item.text}`} aria-pressed={item.done} onClick={() => void toggle(item)}>
+                    <Icon name="check" />
+                  </button>
+                  <button className="gaudi-icon-btn gaudi-icon-btn--danger" type="button" aria-label={`Esborra ${item.text}`} onClick={() => setConfirmItem(item.id)}>
+                    <Icon name="x" />
+                  </button>
+                </div>
+              }
+            />
+          ))}
+        </Stack>
       )}
-    </>
+
+      {items.length > 0 && done < items.length && (
+        <Button variant="ghost" block onClick={() => void markAll()}>Marca-ho tot ({items.length - done})</Button>
+      )}
+      <p className="gaudi-muted" style={{ margin: 0 }}>{done}/{items.length} fets</p>
+
+      <form style={{ display: "flex", gap: 8 }} onSubmit={(e) => { e.preventDefault(); void addItem(); }}>
+        <Input
+          type="text"
+          value={text}
+          placeholder="Afegeix un item…"
+          aria-label="Nou item"
+          style={{ flex: 1 }}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <Button type="submit" variant="cta" disabled={busy || !text.trim()}>Afegeix</Button>
+      </form>
+
+      <Dialog
+        open={confirmDelete}
+        title={`Esborrar «${list?.name ?? ""}»?`}
+        danger
+        confirmLabel="Esborra"
+        cancelLabel="Cancel·la"
+        onConfirm={() => void del()}
+        onCancel={() => setConfirmDelete(false)}
+      >
+        <p style={{ margin: 0, color: "var(--gaudi-muted)" }}>
+          S'esborrarà la llista i els seus {items.length} items. Acció irreversible.
+        </p>
+      </Dialog>
+
+      <Dialog
+        open={confirmItem !== null}
+        title="Esborrar item?"
+        danger
+        confirmLabel="Esborra"
+        cancelLabel="Cancel·la"
+        onConfirm={() => {
+          const itemId = confirmItem;
+          setConfirmItem(null);
+          if (itemId) void removeItem(itemId);
+        }}
+        onCancel={() => setConfirmItem(null)}
+      >
+        <p style={{ margin: 0, color: "var(--gaudi-muted)" }}>Esborrarà aquest item. No es pot desfer.</p>
+      </Dialog>
+    </Stack>
   );
 }
 
@@ -438,38 +450,34 @@ function SearchView({ q, back, open }: { q: string; back: () => void; open: (id:
     hit.type === "list" ? hit.id.replace(/^list-/, "") : hit.listId ?? null;
 
   return (
-    <>
-      <header className="topbar">
-        <button className="icon-btn" aria-label="Enrere" onClick={back}><IBack /></button>
-        <h1>Cerca: {q}</h1>
-      </header>
-      <main className="content">
-        {error && <p className="warn" role="alert">{error}</p>}
-        {result?.warning && <p className="warn">{result.warning}</p>}
-        {result === null ? (
-          <p className="empty">Cercant…</p>
-        ) : result.hits.length === 0 ? (
-          <p className="empty">Cap resultat per «{q}».</p>
-        ) : (
-          <div className="hits">
-            {result.hits.map((hit) => {
-              const target = listIdOf(hit);
-              return (
-                <button
-                  key={hit.id}
-                  className="hit"
-                  onClick={() => target && open(target)}
-                >
-                  <div className="title">
-                    {hit.type === "item" ? "◦ " : "▸ "}{hit.title}
-                  </div>
-                  <div className="sub">{hit.type === "list" ? "llista" : "item"}{hit.snippet ? ` — ${hit.snippet}` : ""}</div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </main>
-    </>
+    <Stack>
+      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+        <button className="gaudi-icon-btn" type="button" aria-label="Enrere" onClick={back}>
+          <Icon name="chevron-left" />
+        </button>
+        <h2 style={{ flex: 1, margin: 0 }}>Cerca: {q}</h2>
+      </div>
+      {error && <Toast kind="error">{error}</Toast>}
+      {result?.warning && <p style={{ margin: 0, color: "var(--gaudi-warning)" }}>{result.warning}</p>}
+      {result === null ? (
+        <p className="gaudi-muted">Cercant…</p>
+      ) : result.hits.length === 0 ? (
+        <EmptyState message={`Cap resultat per «${q}».`} />
+      ) : (
+        <Stack>
+          {result.hits.map((hit) => {
+            const target = listIdOf(hit);
+            return (
+              <ListItem
+                key={hit.id}
+                title={hit.title}
+                description={`${hit.type === "list" ? "llista" : "item"}${hit.snippet ? ` — ${hit.snippet}` : ""}`}
+                onClick={() => { if (target) open(target); }}
+              />
+            );
+          })}
+        </Stack>
+      )}
+    </Stack>
   );
 }

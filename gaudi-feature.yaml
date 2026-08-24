@@ -2,8 +2,8 @@
   "manifest": "1.1",
   "id": "personal.todolists",
   "name": "Llistes personals",
-  "version": "0.1.6",
-  "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida.",
+  "version": "0.2.0",
+  "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida estàndard (@gaudi/ui, UI-STANDARD.md).",
   "author": "Eric",
   "repository": {
     "type": "github",
@@ -42,7 +42,8 @@
       }
     ],
     "packages": [
-      "@gaudi/core@^1.0"
+      "@gaudi/core@^1.0",
+      "@gaudi/ui@^0.1"
     ],
     "mcp": [],
     "gcp": {
