@@ -67,3 +67,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.2.0] - 2026-08-24
 
 - UI estàndard amb @gaudi/ui (UI-STANDARD.md): AppShell sense h1 propi, components del paquet, destructives amb Dialog, eliminat CSS propi. Funcionalitat intacta.
+
+## [0.2.1] - 2026-08-24
+
+- feat(UI): cerca dins de l'app dels items (SearchField + useListSearch de @gaudi/ui v0.2.0); empty state de cap resultat.
