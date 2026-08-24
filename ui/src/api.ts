@@ -33,50 +33,50 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   listLists: (isMaster?: boolean) =>
-    call<{ lists: TodoList[] }>(`/api/lists${isMaster ? "?isMaster=true" : ""}`),
+    call<{ lists: TodoList[] }>(`api/lists${isMaster ? "?isMaster=true" : ""}`),
 
-  getList: (id: string) => call<{ list: TodoList; items: TodoItem[] }>(`/api/lists/${id}`),
+  getList: (id: string) => call<{ list: TodoList; items: TodoItem[] }>(`api/lists/${id}`),
 
   createList: (body: { name: string; description?: string; isMaster?: boolean; shared?: boolean }) =>
-    call<{ list: TodoList }>("/api/lists", { method: "POST", body: JSON.stringify(body) }),
+    call<{ list: TodoList }>("api/lists", { method: "POST", body: JSON.stringify(body) }),
 
   updateList: (id: string, body: { name?: string; description?: string }) =>
-    call<{ list: TodoList }>(`/api/lists/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    call<{ list: TodoList }>(`api/lists/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
 
   deleteList: (id: string) =>
-    call<{ deleted: boolean; itemsDeleted: number }>(`/api/lists/${id}`, { method: "DELETE" }),
+    call<{ deleted: boolean; itemsDeleted: number }>(`api/lists/${id}`, { method: "DELETE" }),
 
   setMaster: (id: string, isMaster: boolean) =>
-    call<{ list: TodoList }>(`/api/lists/${id}/master`, { method: "POST", body: JSON.stringify({ isMaster }) }),
+    call<{ list: TodoList }>(`api/lists/${id}/master`, { method: "POST", body: JSON.stringify({ isMaster }) }),
 
   setShared: (id: string, shared: boolean) =>
-    call<{ list: TodoList }>(`/api/lists/${id}/shared`, { method: "POST", body: JSON.stringify({ shared }) }),
+    call<{ list: TodoList }>(`api/lists/${id}/shared`, { method: "POST", body: JSON.stringify({ shared }) }),
 
   instantiate: (masterId: string, name?: string) =>
-    call<{ list: TodoList; items: TodoItem[] }>(`/api/lists/${masterId}/instantiate`, {
+    call<{ list: TodoList; items: TodoItem[] }>(`api/lists/${masterId}/instantiate`, {
       method: "POST",
       body: JSON.stringify({ name }),
     }),
 
   addItem: (listId: string, text: string) =>
-    call<{ item: TodoItem }>(`/api/lists/${listId}/items`, { method: "POST", body: JSON.stringify({ text }) }),
+    call<{ item: TodoItem }>(`api/lists/${listId}/items`, { method: "POST", body: JSON.stringify({ text }) }),
 
   removeItem: (itemId: string) =>
-    call<{ deleted: boolean }>(`/api/items/${itemId}`, { method: "DELETE" }),
+    call<{ deleted: boolean }>(`api/items/${itemId}`, { method: "DELETE" }),
 
   check: (listId: string, itemIds: string[] | "all") =>
-    call<{ updated: number; items: TodoItem[]; completed: boolean }>(`/api/lists/${listId}/check`, {
+    call<{ updated: number; items: TodoItem[]; completed: boolean }>(`api/lists/${listId}/check`, {
       method: "POST",
       body: JSON.stringify({ itemIds }),
     }),
 
   uncheck: (listId: string, itemIds: string[] | "all") =>
-    call<{ updated: number; items: TodoItem[]; completed: boolean }>(`/api/lists/${listId}/uncheck`, {
+    call<{ updated: number; items: TodoItem[]; completed: boolean }>(`api/lists/${listId}/uncheck`, {
       method: "POST",
       body: JSON.stringify({ itemIds }),
     }),
 
-  search: (q: string) => call<{ query: string; engine: string; total: number; hits: SearchHit[] }>(`/api/search?q=${encodeURIComponent(q)}`),
+  search: (q: string) => call<{ query: string; engine: string; total: number; hits: SearchHit[] }>(`api/search?q=${encodeURIComponent(q)}`),
 };
 
 export interface SearchHit {
