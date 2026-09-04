@@ -27,24 +27,21 @@ afterEach(() => {
   if (tmpHome) rmSync(tmpHome, { recursive: true, force: true });
 });
 
-test("cadena llull-token i firebase-sa: cau al core", async () => {
+test("cadena llull-token: cau al core (K3s ONLY)", async () => {
   process.env[PLATFORM_CORE_ENV.llullToken] = "core-llull";
-  process.env.GAUDI_USER_FIREBASE_SA = JSON.stringify({ client_email: "core@x" });
   const p = createEnvCredentialProvider();
   assert.equal(await p.get("todolists.llull-token"), "core-llull");
-  const sa = (await p.get("todolists.firebase-sa")) as { client_email: string };
-  assert.equal(sa.client_email, "core@x");
+  // Zero-Firebase: todolists.firebase-sa eliminat
+  assert.equal(await p.has("todolists.firebase-sa"), false);
 });
 
-test("fail-hard: config firestore + credencial no disponible → reject explícit", async () => {
+test("fail-hard: config postgres sense URL → reject explícit (K3s ONLY)", async () => {
   mkdirSync(join(tmpHome!, ".gaudi"), { recursive: true });
-  writeFileSync(join(tmpHome!, ".gaudi", "gaudi.yaml"),
-    "database:\n  provider: firestore\n  firestore:\n    project: makeyourcrew\ncredentials:\n  backend: env\n  firestoreCredentialId: user.firebase-sa\n");
+  writeFileSync(join(tmpHome!, ".gaudi", "gaudi.yaml"), "database:\n  provider: postgres\n  postgres:\n    url: postgres://gaudi:gaudi@127.0.0.1:1/does-not-exist\n");
   await assert.rejects(
     () => buildRuntime(),
     (err: unknown) => {
-      assert.match((err as Error).message, /user\.firebase-sa/);
-      assert.match((err as Error).message, /no disponible/i);
+      assert.match((err as Error).message, /postgres|DAO configurat/i);
       return true;
     }
   );

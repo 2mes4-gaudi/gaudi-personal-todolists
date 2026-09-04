@@ -5,8 +5,6 @@ const CREDENTIAL_CHAINS: Record<string, string[]> = {
   // Llull: token propi SI existeix; sinó el token core de plataforma.
   "todolists.llull-token": ["GAUDI_TODOLISTS_LLULL_TOKEN", PLATFORM_CORE_ENV.llullToken],
   // SA pròpia SI existeix; sinó la SA única de plataforma.
-  "todolists.firebase-sa": ["GAUDI_TODOLISTS_FIREBASE_SA", PLATFORM_CORE_ENV.firebaseSa],
-  "user.firebase-sa": [PLATFORM_CORE_ENV.firebaseSa],
 };
 
 function parseValue(raw: string | undefined): string | object | undefined {
@@ -27,7 +25,7 @@ export function createEnvCredentialProvider(): CredentialProvider {
 
 export const noopCredentials: CredentialProvider = {
   get: async () => undefined,
-  has: async () => false,
+  has: async () => false
 };
 
 export function noopLogger(): Logger {
@@ -39,6 +37,6 @@ export function stderrLogger(): Logger {
   return {
     info: () => {},
     warn: (m) => process.stderr.write(`${m}\n`),
-    error: (m) => process.stderr.write(`${m}\n`),
-  };
+    error: (m) => process.stderr.write(`${m}\n`)
+};
 }

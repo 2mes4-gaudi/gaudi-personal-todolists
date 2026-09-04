@@ -14,13 +14,11 @@ export class NoGaudiConfigError extends Error {
 
 export interface FpConfig {
   database: {
-    provider: "firestore" | "postgres";
-    firestore?: { project: string };
+    provider: "postgres";
     postgres?: { url: string };
   };
   credentials?: {
     backend: "env" | "secret-manager";
-    firestoreCredentialId?: string;
   };
 }
 
@@ -42,7 +40,6 @@ export function loadFpConfig(path = gaudiYamlPath()): FpConfig {
 export function toDbConfig(cfg: FpConfig): DbConfig {
   return {
     provider: cfg.database.provider,
-    firestore: cfg.database.firestore,
     postgres: cfg.database.postgres,
   };
 }

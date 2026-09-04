@@ -2,7 +2,7 @@
   "manifest": "1.1",
   "id": "personal.todolists",
   "name": "Llistes personals",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida estàndard (@gaudi/ui, UI-STANDARD.md).",
   "author": "Eric",
   "repository": {
@@ -20,8 +20,7 @@
       "opencode"
     ],
     "database": [
-      "postgres",
-      "firestore"
+      "postgres"
     ],
     "ui": true
   },
@@ -47,9 +46,7 @@
     ],
     "mcp": [],
     "gcp": {
-      "services": [
-        "pubsub.googleapis.com"
-      ]
+      "services": []
     }
   },
   "actions": [
@@ -135,46 +132,9 @@
         "actions.todo.list-search",
         "indexing"
       ]
-    },
-    {
-      "id": "todolists.firebase-sa",
-      "type": "service-account-json",
-      "transport": [
-        "env"
-      ],
-      "defaultTransport": "env",
-      "envVar": "GAUDI_TODOLISTS_FIREBASE_SA",
-      "description": "Service account JSON (Firestore + Pub/Sub publisher a la cua única gaudi.notifications).",
-      "required": false,
-      "usedBy": [
-        "messaging"
-      ]
-    },
-    {
-      "id": "user.firebase-sa",
-      "type": "service-account-json",
-      "envVar": "GAUDI_USER_FIREBASE_SA",
-      "description": "Credential DAO de plataforma (owner: user.profile): el resol aquest feature quan ~/.gaudi/gaudi.yaml tria firestore. Sense ell, fail-hard (cap fallback a memòria).",
-      "required": false,
-      "usedBy": [
-        "database"
-      ]
     }
   ],
   "data": {
-    "firestore": {
-      "project": "",
-      "collections": [
-        {
-          "path": "todolists/{listId}",
-          "model": "TodoList"
-        },
-        {
-          "path": "todo_items/{itemId}",
-          "model": "TodoItem"
-        }
-      ]
-    },
     "postgres": {
       "migrations": "db/migrations/",
       "tables": [
@@ -275,14 +235,6 @@
       "description": "URL del motor Llull (per defecte http://localhost:8080).",
       "required": false,
       "secret": false,
-      "scope": "feature"
-    },
-    {
-      "id": "firebase-sa",
-      "envVar": "GAUDI_TODOLISTS_FIREBASE_SA",
-      "description": "Service account JSON (Firestore + Pub/Sub) per publicar events a gaudi.notifications.",
-      "required": false,
-      "secret": true,
       "scope": "feature"
     },
     {

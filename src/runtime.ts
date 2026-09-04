@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import {
-  createStore, createGcpMessageBus, createLocalMessageBus,
+  createStore, createNatsMessageBus, createLocalMessageBus,
   type KVStore, type CredentialProvider, type Logger, type MessageBus,
 } from "@gaudi/core";
 import type { TodoContext } from "./ports/context.js";
@@ -70,11 +70,11 @@ async function loadDb(opts: RuntimeOptions, credentials: CredentialProvider, log
     throw err;
   }
   try {
-    return await createStore(toDbConfig(config), credentials, config.credentials?.firestoreCredentialId);
+    return await createStore(toDbConfig(config), credentials);
   } catch (err) {
     throw new Error(
       `DAO configurat però no disponible: ${(err as Error).message}. ` +
-        `Revisa ~/.gaudi/gaudi.yaml i les credencials (per user.firebase-sa: env GAUDI_USER_FIREBASE_SA). ` +
+        `Revisa ~/.gaudi/gaudi.yaml i les credencials (per postgres: env POSTGRES_URL o GAUDI_PLATFORM_DB_URL). ` +
         `NO es fa fallback a memòria: les dades es perdrien entre invocacions.`
     );
   }
@@ -98,9 +98,7 @@ export async function buildRuntime(opts: RuntimeOptions = {}): Promise<TodoRunti
     opts.messageBus ??
     (opts.noConfig
       ? createLocalMessageBus({ source: manifest.id, version: manifest.version })
-      : createGcpMessageBus({
-          credentials,
-          credentialId: "todolists.firebase-sa",
+      : createNatsMessageBus({
           source: manifest.id,
           version: manifest.version,
           logger,
