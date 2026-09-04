@@ -75,3 +75,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.2.2] - 2026-08-24
 
 - fix(UI): paths d'API relatius (api/...) — el 404 /api/lists era per paths absoluts; el gateway munta l'API a /personal-todolists/.
+
+## [0.2.4] - 2026-09-04
+
+- Migració K3s ONLY (Zero-Firebase): DAO Postgres únic, bus NATS, credencials Firebase/GCP eliminades, dependència @gaudi/core v1.8.0.
