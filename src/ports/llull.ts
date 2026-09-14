@@ -8,6 +8,8 @@ export interface LlullSearch {
   delete(indexName: string, id: string): Promise<void>;
   /** Cerca documents d'un índex. */
   search(indexName: string, query: string): Promise<SearchHitLike[]>;
+  /** Ping lleuger per health (SPEC §18): false = motor caigut. */
+  ping(): Promise<boolean>;
 }
 
 /** Hit cru que retorna el motor (normalitzat pel service de cerca). */

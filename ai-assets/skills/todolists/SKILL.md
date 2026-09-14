@@ -1,28 +1,28 @@
 ---
 name: Llistes personals
-description: "Skill de domini del feature personal.todolists: crear i mantindre llistes (afegir, esborrar, marcar individual/bulk/tot), llistes mestres instanciables (fresh start), llistes compartides amb col·laboració total i cerca per nom, descripció o text d'items (Llull amb fallback DAO). Usar quan l'usuari parli de llistes, coses pendents, plantilles de llistes o demani cercar on té apuntat alguna cosa."
+description: "Domain skill for Llistes personals: use when the user requests operations related to Llistes personals."
 ---
 
 # Llistes personals — personal.todolists
 
-## Qué hace el feature
+## What does el feature
 
-Listas personales (todo lists) con items marcables:
+Listas personales (todo lists) with items marcables:
 
-- **Listas**: nombre + descripción (la descripción explica el propósito — úsala al crear).
-- **Items**: texto + estado hecho/pendiente. Minimal por diseño: sin fechas ni prioridades.
-- **Listas maestras** (`isMaster`): plantillas. Instanciar crea un **snapshot independiente**
-  con los mismos textos pero **todos los items pendentes** (fresh start) y `sourceMasterId`
-  para trazabilidad. La maestra conserva su propio estado.
-- **Listas compartidas** (`shared`): visibles y editables por **todos** los usuarios de la
-  instalación (añadir/borrar items, marcar). Solo el **owner** puede borrar la lista,
+- **Listas**: nombre + descripción (la descripción explica el propósito — úsala al create).
+- **Items**: texto + state hecho/pendiente. Minimal por diseño: sin fechas ni prioridades.
+- **Listas maestras** (`isMaster`): plantillas. Instanciar create un **snapshot independiente**
+  with los mismos textos pero **todos los items pendentes** (fresh start) y `sourceMasterId`
+  for trazabilidad. La maestra conserva su propio state.
+- **Listas compartidas** (`shared`): visibles y editables por **todos** los users de la
+  instalación (añadir/borrar items, marcar). Solo el **owner** puede borrar la list,
   cambiar nombre/descripción o tocar los flags.
-- **Búsqueda**: semántica vía Llull (listas + items) con degradación automática a fallback
-  DAO case-insensitive cuando no hay token (`engine: "dao-fallback"` + `warning`).
+- **Búsqueda**: semántica vía Llull (listas + items) with degradación automática a fallback
+  DAO case-insensitive when no hay token (`engine: "dao-fallback"` + `warning`).
 
-## Cómo ejecutar acciones
+## How ejecutar acciones
 
-CLI agente-friendly vía `node dist/bin.js todo <action> ...`. **Siempre `--json`**.
+CLI agente-friendly vía `node dist/bin.js todo <action> ...`. **Always `--json`**.
 
 ```bash
 node dist/bin.js todo --help
@@ -65,24 +65,24 @@ node dist/bin.js todo list-delete <listId> --yes --json
 
 Nota: `itemIds` admite un id, un array JSON o la palabra `all`. Los ids se obtienen de
 `list-get` / `list-list` / `list-search` (campo `id`; en los hits de búsqueda, quita el
-prefijo: `item-xxx` → item, `list-xxx` → lista).
+prefijo: `item-xxx` → item, `list-xxx` → list).
 
 ## Política de confirmación
 
-- `list-delete` e `item-remove` son `destructive: true` (`confirm: required`): proponer
-  primero con `--dry-run`, mostrar el plan al humano y esperar `--yes` explícito.
+- `list-delete` e `item-remove` are `destructive: true` (`confirm: required`): proponer
+  first with `--dry-run`, mostrar el plan al humano y esperar `--yes` explícito.
   Sin `--yes` el CLI responde `CONFIRM_REQUIRED` (exit 2) — pide confirmación humana.
-- `list-delete` borra la lista Y todos sus items en cascada: verifica siempre con
-  `list-get` antes de proponer el borrado.
+- `list-delete` borra la list Y todos sus items en cascada: verifica always with
+  `list-get` before de proponer el borrado.
 
 ## Reglas de dominio
 
-- **Visibilidad**: cada usuario ve sus listas + todas las `shared`. Una lista privada
-  ajena es invisible (error "no trobada o privada" — no filtres el mensaje).
+- **Visibilidad**: cada user ve sus listas + todas las `shared`. Una list privada
+  ajena is invisible (error "no trobada o privada" — no filtres el mensaje).
 - **Owner-only**: `list-update`, `list-delete`, `list-set-master`, `list-set-shared`.
 - **Colaboración total** en compartidas: cualquiera puede añadir/quitar/marcar items.
-- **Instanciar** solo funciona sobre maestras (`isMaster: true`) y la instancia nace
-  privada, no maestra y con todos los items pendentes.
+- **Instanciar** solo funciona about maestras (`isMaster: true`) y la instancia nace
+  privada, no maestra y with todos los items pendentes.
 - **Identidad**: el `userKey` va opcional al final de cada acción (por defecto el del
   runtime: uid de `user.profile` o `GAUDI_TODOLISTS_USER_KEY`).
 
@@ -90,4 +90,4 @@ prefijo: `item-xxx` → item, `list-xxx` → lista).
 
 El feature publica a `gaudi.notifications`: `todolist.created`, `todolist.deleted`,
 `todolist.instantiated`, `todolist.completed` (transición a todo marcado, un solo event)
-y `todolist.shared`. No hay eventos por item individual — el detalle se consulta al feature.
+y `todolist.shared`. No hay eventos por item individual — el detalle se query al feature.

@@ -1,3 +1,4 @@
+import { createFeatureLogger } from "@gaudi/core";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
@@ -82,7 +83,7 @@ async function loadDb(opts: RuntimeOptions, credentials: CredentialProvider, log
 
 /** Arrel de composició: aquí (i només aquí) es llegeix process.env. */
 export async function buildRuntime(opts: RuntimeOptions = {}): Promise<TodoRuntime> {
-  const logger = opts.logger ?? stderrLogger();
+  const logger = opts.logger ?? createFeatureLogger("personal-todolists");
   const credentials = opts.credentials ?? (opts.noConfig ? noopCredentials : createEnvCredentialProvider());
   const db = await loadDb(opts, credentials, logger);
   const clock = opts.clock ?? (() => new Date());

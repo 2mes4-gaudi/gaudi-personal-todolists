@@ -1,55 +1,47 @@
+import { createLlullClient, type LlullClient } from "@gaudi/core";
 import type { LlullSearch, SearchHitLike } from "../../ports/llull.js";
 
 /**
- * Adapter de Llull Search Engine via HTTP REST (SPEC §16).
- * Contracte: POST /v1/{index}/index (action INDEX|DELETE), GET /v1/{index}/search?q=.
+ * Adapter Llull DELEGANT a l'SDK (@gaudi/core — SPEC §3d/§16: prohibits els
+ * adapters HTTP propis). Conserva la semàntica del port del feature:
+ * - `index`/`delete` LLENÇEN si el motor falla (els serveis hi compten).
+ * - `search` només llença si el motor està CAIGUT (resultats buits + ping KO)
+ *   per preservar els fallbacks DAO del feature.
  */
 export function createLlullSearch(opts: { baseUrl: string; token?: string }): LlullSearch {
-  const base = opts.baseUrl.replace(/\/$/, "");
-  const headers = {
-    "Content-Type": "application/json",
-    ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
-  };
-
-  async function post(path: string, body: unknown): Promise<unknown> {
-    const res = await fetch(`${base}${path}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`Llull POST ${path} fallit (${res.status})`);
-    return res.json();
-  }
+  const client: LlullClient = createLlullClient({ url: opts.baseUrl, token: opts.token });
 
   return {
     async index(indexName, doc) {
-      await post(`/v1/${indexName}/index`, { id: doc.id, action: "INDEX", fields: doc.fields });
+      const ok = await client.index(indexName, {
+        id: doc.id,
+        fields: { title: doc.fields.title ?? doc.id, content: doc.fields.content ?? "", ...doc.fields },
+      });
+      if (!ok) throw new Error(`Llull POST /v1/${indexName}/index fallit`);
     },
 
     async delete(indexName, id) {
-      await post(`/v1/${indexName}/index`, { id, action: "DELETE" });
+      const ok = await client.delete(indexName, id);
+      if (!ok) throw new Error(`Llull DELETE /v1/${indexName}/${id} fallit`);
     },
 
     async search(indexName, query): Promise<SearchHitLike[]> {
-      const res = await fetch(`${base}/v1/${indexName}/search?q=${encodeURIComponent(query)}`, {
-        headers: { ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}) },
-      });
-      if (!res.ok) throw new Error(`Llull GET search fallit (${res.status})`);
-      const data = (await res.json()) as {
-        results?: Array<Record<string, unknown>>;
-        hits?: Array<Record<string, unknown>>;
-      };
-      const raw = (data.results ?? data.hits ?? []) as Array<Record<string, unknown>>;
-      return raw.map<SearchHitLike>((r) => ({
-        id: String(r.id ?? r.path ?? ""),
-        title: typeof r.title === "string"
-          ? r.title
-          : (r.fields as { title?: string } | undefined)?.title ?? null,
-        path: String((r.fields as { path?: string } | undefined)?.path ?? r.path ?? ""),
-        score: typeof r.score === "number" ? r.score : null,
-        folder: (r.fields as { folder?: string } | undefined)?.folder ?? null,
-        content: (r.fields as { content?: string } | undefined)?.content ?? null,
+      const hits = await client.search(indexName, query);
+      if (hits.length === 0 && !(await client.ping())) {
+        throw new Error("Llull no disponible (ping KO)");
+      }
+      return hits.map<SearchHitLike>((h) => ({
+        id: h.id,
+        title: h.title ?? null,
+        path: String((h.fields as { path?: string } | undefined)?.path ?? ""),
+        score: typeof h.score === "number" ? h.score : null,
+        folder: (h.fields as { folder?: string } | undefined)?.folder ?? null,
+        content: (h.fields as { content?: string } | undefined)?.content ?? null,
       }));
+    },
+
+    async ping() {
+      return client.ping();
     },
   };
 }

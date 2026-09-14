@@ -2,6 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { AppShell, Badge, Button, Dialog, EmptyState, Field, Icon, Input, ListItem, SearchField, Stack, Textarea, Toast, useListSearch, type ToastKind } from "@gaudi/ui";
 import { api, type SearchHit, type TodoItem, type TodoList } from "./api";
 
+import en from "./locales/en.json";
+import ca from "./locales/ca.json";
+import es from "./locales/es.json";
+import { initGaudiI18n, useTranslation } from "@gaudi/ui/i18n";
+
+initGaudiI18n({ en, ca, es });
+
+
 // ── Tipus de vista ──────────────────────────────────────────────────────────
 
 type View = { kind: "lists" } | { kind: "detail"; id: string } | { kind: "search"; q: string };
@@ -9,6 +17,7 @@ type View = { kind: "lists" } | { kind: "detail"; id: string } | { kind: "search
 // ── App ────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const { t } = useTranslation();
   const [view, setView] = useState<View>({ kind: "lists" });
   const [toast, setToast] = useState<{ kind: ToastKind; text: string } | null>(null);
 
@@ -81,7 +90,7 @@ function ListsView({ open, onSearch }: { open: (id: string) => void; onSearch: (
 
       {error && <Toast kind="error">{error}</Toast>}
       {lists === null ? (
-        <p className="gaudi-muted">Carregant…</p>
+        <p className="gaudi-muted">{t("common.loading")}</p>
       ) : lists.length === 0 ? (
         <EmptyState message={mastersOnly ? "Encara no hi ha llistes mestres." : "Encara no hi ha llistes. Crea la primera amb Nova llista."} />
       ) : (

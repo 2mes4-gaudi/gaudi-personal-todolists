@@ -17,10 +17,11 @@ export async function checkHealth(ctx: TodoContext): Promise<HealthOutput> {
   }
 
   // Extern: Llull (cerca) — ping LLEUGER si està configurat; sinó degradació permesa
-  const llullCtx = ctx as unknown as { llull?: { search: (i: string, q: string) => Promise<unknown> }; llullAvailable?: boolean };
+  const llullCtx = ctx as unknown as { llull?: { ping: () => Promise<boolean> }; llullAvailable?: boolean };
   if (llullCtx.llull && llullCtx.llullAvailable) {
     try {
-      await llullCtx.llull.search("gaudi-ping", "ping");
+      const alive = await llullCtx.llull.ping();
+      if (!alive) throw new Error("ping KO");
       components.push({ name: "llull", ok: true, detail: "respon" });
     } catch (err) {
       components.push({ name: "llull", ok: false, detail: (err as Error).message });
