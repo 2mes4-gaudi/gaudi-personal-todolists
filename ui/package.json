@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@gaudi/ui": "file:../../../gaudi-ui",
+    "@gaudi/ui": "git+https://github.com/2mes4-gaudi/gaudi-ui.git#v0.4.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "i18next": "^23.15.0",
