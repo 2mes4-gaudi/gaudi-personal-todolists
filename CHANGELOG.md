@@ -84,3 +84,7 @@ Primera versió del feature `personal.todolists`.
 ## [0.2.4] - 2026-09-04
 
 - Migració K3s ONLY (Zero-Firebase): DAO Postgres únic, bus NATS, credencials Firebase/GCP eliminades, dependència @gaudi/core v1.8.0.
+
+## [0.2.5] - 2026-09-30
+
+- i18n English-first (ui/src/locales en/ca/es, initGaudiI18n, useTranslation) + @gaudi/ui v0.4.0 via git+https.
