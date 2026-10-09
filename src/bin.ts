@@ -14,9 +14,10 @@ try {
   // defaults
 }
 
+const isHelpOrVersion = process.argv.some(a => ["--help", "-h", "--version", "-V"].includes(a));
 let runtime: Awaited<ReturnType<typeof buildRuntime>>;
 try {
-  runtime = await buildRuntime();
+  runtime = await buildRuntime(isHelpOrVersion ? { noConfig: true } : {});
 } catch (err) {
   process.stderr.write(`✗ personal.todolists no pot arrencar: ${(err as Error).message}\n`);
   process.exit(1);

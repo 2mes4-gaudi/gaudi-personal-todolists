@@ -169,6 +169,8 @@ export function buildTodoCli(
     };
     attach(domainCmd, tree);
     program.addCommand(domainCmd);
+    // Attach directly to root program so both `todo <action>` and `todo <domain> <action>` work
+    attach(program, tree);
   }
 
   return program;
