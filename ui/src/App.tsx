@@ -5,9 +5,24 @@ import { api, type SearchHit, type TodoItem, type TodoList } from "./api";
 import en from "./locales/en.json";
 import ca from "./locales/ca.json";
 import es from "./locales/es.json";
-import { initGaudiI18n, useTranslation } from "@gaudi/ui/i18n";
+import i18n from "i18next";
+import { initReactI18next, useTranslation } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 
-initGaudiI18n({ en, ca, es });
+if (!i18n.isInitialized) {
+  i18n
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+      resources: {
+        en: { translation: en },
+        ca: { translation: ca },
+        es: { translation: es },
+      },
+      fallbackLng: "ca",
+      interpolation: { escapeValue: false },
+    });
+}
 
 
 // ── Tipus de vista ──────────────────────────────────────────────────────────
@@ -18,16 +33,49 @@ type View = { kind: "lists" } | { kind: "detail"; id: string } | { kind: "search
 
 export default function App() {
   const { t } = useTranslation();
-  const [view, setView] = useState<View>({ kind: "lists" });
+  const [view, setView] = useState<View>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const listId = p.get("list") || p.get("id");
+      if (listId) return { kind: "detail", id: listId };
+      const q = p.get("q");
+      if (q) return { kind: "search", q };
+    }
+    return { kind: "lists" };
+  });
   const [toast, setToast] = useState<{ kind: ToastKind; text: string } | null>(null);
 
   const notify = useCallback((kind: ToastKind, text: string) => setToast({ kind, text }), []);
 
+  const handleOpen = useCallback((id: string) => {
+    setView({ kind: "detail", id });
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      p.set("list", id);
+      const qs = p.toString();
+      const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+      window.history.pushState(null, "", newUrl);
+    }
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setView({ kind: "lists" });
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      p.delete("list");
+      p.delete("id");
+      p.delete("q");
+      const qs = p.toString();
+      const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+      window.history.pushState(null, "", newUrl);
+    }
+  }, []);
+
   return (
     <AppShell>
-      {view.kind === "lists" && <ListsView open={(id) => setView({ kind: "detail", id })} onSearch={(q) => setView({ kind: "search", q })} />}
-      {view.kind === "detail" && <DetailView id={view.id} back={() => setView({ kind: "lists" })} notify={notify} />}
-      {view.kind === "search" && <SearchView q={view.q} back={() => setView({ kind: "lists" })} open={(id) => setView({ kind: "detail", id })} />}
+      {view.kind === "lists" && <ListsView open={handleOpen} onSearch={(q) => setView({ kind: "search", q })} />}
+      {view.kind === "detail" && <DetailView id={view.id} back={handleBack} notify={notify} />}
+      {view.kind === "search" && <SearchView q={view.q} back={handleBack} open={handleOpen} />}
       {toast && <Toast kind={toast.kind}>{toast.text}</Toast>}
     </AppShell>
   );
@@ -36,6 +84,7 @@ export default function App() {
 // ── Vista: llista de llistes ────────────────────────────────────────────────
 
 function ListsView({ open, onSearch }: { open: (id: string) => void; onSearch: (q: string) => void }) {
+  const { t } = useTranslation();
   const [lists, setLists] = useState<TodoList[] | null>(null);
   const [error, setError] = useState("");
   const [mastersOnly, setMastersOnly] = useState(false);

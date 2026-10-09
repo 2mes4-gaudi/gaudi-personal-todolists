@@ -2,7 +2,7 @@
   "manifest": "1.1",
   "id": "personal.todolists",
   "name": "Llistes personals",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Llistes personals (todo lists): crear llistes amb nom i descripció, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (col·laboració total), cerca semàntica via Llull i UI embebida estàndard (@gaudi/ui, UI-STANDARD.md).",
   "author": "Eric",
   "repository": {
@@ -34,20 +34,13 @@
       {
         "id": "user.profile",
         "repository": "https://github.com/2mes4-gaudi/gaudi-user-profile"
-      },
-      {
-        "id": "projects.manager",
-        "repository": "https://github.com/2mes4-gaudi/gaudi-projects-manager"
       }
     ],
     "packages": [
-      "@gaudi/core@^1.0",
+      "@gaudi/core@^1.9",
       "@gaudi/ui@^0.1"
     ],
-    "mcp": [],
-    "gcp": {
-      "services": []
-    }
+    "mcp": []
   },
   "actions": [
     {

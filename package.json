@@ -1,6 +1,6 @@
 {
   "name": "@gaudi/personal.todolists",
-  "version": "0.1.2",
+  "version": "0.2.6",
   "description": "Llistes personals (todo lists): crear llistes amb nom i descripcio, afegir/esborrar items, marcar/desmarcar (individual, bulk i tot), llistes mestres instanciables (snapshot fresh-start), llistes compartides (colaboracio total), cerca semantica via Llull i UI embebida.",
   "type": "module",
   "main": "dist/index.js",

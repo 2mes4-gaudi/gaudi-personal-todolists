@@ -1,93 +1,88 @@
 ---
-name: Llistes personals
-description: "Domain skill for Llistes personals: use when the user requests operations related to Llistes personals."
+name: todolists
+description: "Skill de gestió de llistes personals i tasques (personal.todolists): crear llistes, afegir/esborrar ítems, marcar/desmarcar, llistes mestres, compartides i cerca semàntica a Llull."
 ---
 
 # Llistes personals — personal.todolists
 
-## What does el feature
+Aquest skill permet gestionar les llistes personals de tasques (todo lists) de l'usuari a la plataforma Gaudi.
 
-Listas personales (todo lists) with items marcables:
+## Què fa el feature
 
-- **Listas**: nombre + descripción (la descripción explica el propósito — úsala al create).
-- **Items**: texto + state hecho/pendiente. Minimal por diseño: sin fechas ni prioridades.
-- **Listas maestras** (`isMaster`): plantillas. Instanciar create un **snapshot independiente**
-  with los mismos textos pero **todos los items pendentes** (fresh start) y `sourceMasterId`
-  for trazabilidad. La maestra conserva su propio state.
-- **Listas compartidas** (`shared`): visibles y editables por **todos** los users de la
-  instalación (añadir/borrar items, marcar). Solo el **owner** puede borrar la list,
-  cambiar nombre/descripción o tocar los flags.
-- **Búsqueda**: semántica vía Llull (listas + items) with degradación automática a fallback
-  DAO case-insensitive when no hay token (`engine: "dao-fallback"` + `warning`).
+- **Llistes**: Nom + descripció (la descripció explica el propòsit; útil per cercar).
+- **Ítems**: Text + estat fet/pendent.
+- **Llistes mestres (`isMaster`)**: Plantilles reutilitzables. Instanciar una llista mestra crea una còpia independent amb tots els ítems pendents (*fresh start*).
+- **Llistes compartides (`shared`)**: Visibles i editables per tots els usuaris de la plataforma (col·laboració total per afegir o marcar ítems). Només el creador pot esborrar la llista o canviar metadades.
+- **Cerca**: Cerca semàntica a Llull sobre títols, descripcions i contingut dels ítems, amb fallback automàtic a cerca de base de dades.
 
-## How ejecutar acciones
+---
 
-CLI agente-friendly vía `node dist/bin.js todo <action> ...`. **Always `--json`**.
+## Comandes CLI (`todo`)
+
+Execució directe mitjançant el binari `todo` o a través del catàleg del Kernel:
 
 ```bash
-node dist/bin.js todo --help
+# Crear llista nova
+node dist/bin.js todo list-create "Nom de la llista" "Descripció" --json
 
-# Crear lista (descripción recomendada: explica el propósito para poder buscarla)
-node dist/bin.js todo list-create "Compra setmanal" "Coses que cal comprar cada setmana" --json
+# Crear llista mestra (plantilla)
+node dist/bin.js todo list-create "Viatges" "Plantilla de viatge" true --json
 
-# Crear MAESTRA / compartida (flags posicionales: name [description] [isMaster] [shared])
-node dist/bin.js todo list-create "Viatges" "Template de viatges" true --json
-
-# Listar (propias + compartidas; filtro de maestras)
+# Llistar llistes existents
 node dist/bin.js todo list-list --json
-node dist/bin.js todo list-list true --json
 
-# Ver una lista con sus items
+# Obtenir el detall d'una llista i els seus ítems
 node dist/bin.js todo list-get <listId> --json
 
-# Items: añadir / borrar / marcar / desmarcar
-node dist/bin.js todo item-add <listId> "Pa" --json
+# Afegir un ítem a la llista
+node dist/bin.js todo item-add <listId> "Comprar pomes" --json
+
+# Marcar un ítem com a fet (accepta itemId, JSON array o "all")
+node dist/bin.js todo item-check <listId> <itemId> --json
+node dist/bin.js todo item-check <listId> "all" --json
+
+# Desmarcar un ítem
+node dist/bin.js todo item-uncheck <listId> <itemId> --json
+
+# Eliminar un ítem (destructiva: requereix --yes)
 node dist/bin.js todo item-remove <itemId> --yes --json
-node dist/bin.js todo item-check <listId> <itemId> --json          # uno
-node dist/bin.js todo item-check <listId> '["id1","id2"]' --json   # varios (JSON)
-node dist/bin.js todo item-check <listId> "all" --json             # toda la lista
-node dist/bin.js todo item-uncheck <listId> "all" --json
 
-# Mestras y compartidas
-node dist/bin.js todo list-set-master <listId> true --json
-node dist/bin.js todo list-set-shared <listId> true --json
+# Instanciar una plantilla mestra
+node dist/bin.js todo list-instantiate <masterId> "Nom de la nova llista" --json
 
-# Instanciar una maestra (fresh start, copia independiente)
-node dist/bin.js todo list-instantiate <masterId> "Viatge setembre" --json
-
-# Buscar listas/items por propósito, nombre o contenido
+# Cerca semàntica
 node dist/bin.js todo list-search "compra" --json
 
-# Editar metadatos (owner) / borrar lista (owner, cascada de items)
-node dist/bin.js todo list-update <listId> "Compra gran" --json
+# Esborrar llista (destructiva: requereix --yes)
 node dist/bin.js todo list-delete <listId> --yes --json
 ```
 
-Nota: `itemIds` admite un id, un array JSON o la palabra `all`. Los ids se obtienen de
-`list-get` / `list-list` / `list-search` (campo `id`; en los hits de búsqueda, quita el
-prefijo: `item-xxx` → item, `list-xxx` → list).
+---
 
-## Política de confirmación
+## Execució via Kernel Functionalities
 
-- `list-delete` e `item-remove` are `destructive: true` (`confirm: required`): proponer
-  first with `--dry-run`, mostrar el plan al humano y esperar `--yes` explícito.
-  Sin `--yes` el CLI responde `CONFIRM_REQUIRED` (exit 2) — pide confirmación humana.
-- `list-delete` borra la list Y todos sus items en cascada: verifica always with
-  `list-get` before de proponer el borrado.
+Pots executar qualsevol acció directament mitjançant les funcionalitats registrades al Kernel:
 
-## Reglas de dominio
+```bash
+# Crear llista
+gaudi kernel functionalities run personal.todolists.todo.list-create \
+  --payload '{"name": "Viatge a Menorca", "description": "Equipatge i reserves"}' \
+  --json
 
-- **Visibilidad**: cada user ve sus listas + todas las `shared`. Una list privada
-  ajena is invisible (error "no trobada o privada" — no filtres el mensaje).
-- **Owner-only**: `list-update`, `list-delete`, `list-set-master`, `list-set-shared`.
-- **Colaboración total** en compartidas: cualquiera puede añadir/quitar/marcar items.
-- **Instanciar** solo funciona about maestras (`isMaster: true`) y la instancia nace
-  privada, no maestra y with todos los items pendentes.
-- **Identidad**: el `userKey` va opcional al final de cada acción (por defecto el del
-  runtime: uid de `user.profile` o `GAUDI_TODOLISTS_USER_KEY`).
+# Afegir ítem
+gaudi kernel functionalities run personal.todolists.todo.item-add \
+  --payload '{"listId": "<listId>", "text": "Bitllets de vaixell"}' \
+  --json
 
-## Eventos (cua única)
+# Marcar ítem
+gaudi kernel functionalities run personal.todolists.todo.item-check \
+  --payload '{"listId": "<listId>", "itemIds": ["<itemId>"]}' \
+  --json
+```
 
-El feature publica a `gaudi.notifications`: `todolist.created`, `todolist.deleted`,
-`todolist.instantiated`, `todolist.completed` (transición a todo marcado, un solo event)
-y `todolist.shared`. No hay eventos por item individual — el detalle se query al feature.
+---
+
+## Política de Seguretat i Confirmació
+
+- Les accions `list-delete` i `item-remove` són destructives (`destructive: true`). Si s'executen sense `--yes`, retornen `CONFIRM_REQUIRED`.
+- Demana sempre confirmació a l'usuari abans d'esborrar llistes o ítems.
