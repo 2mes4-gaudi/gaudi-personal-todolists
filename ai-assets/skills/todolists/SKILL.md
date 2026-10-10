@@ -86,3 +86,28 @@ gaudi kernel functionalities run personal.todolists.todo.item-check \
 
 - Les accions `list-delete` i `item-remove` són destructives (`destructive: true`). Si s'executen sense `--yes`, retornen `CONFIRM_REQUIRED`.
 - Demana sempre confirmació a l'usuari abans d'esborrar llistes o ítems.
+
+---
+
+## Enllaços (compartir llistes amb l'usuari)
+
+Quan presentis una llista a l'usuari, acompanya SEMPRE la resposta amb el
+deep-link canònic del launcher, en **Markdown RELATIU** (mai domini absolut —
+el connector del kernel l'absolutitza per al canal i el converteix en botó):
+
+```
+[✅ Obre la llista <nom>](/app/personal-todolists?list=<listId>)
+```
+
+- Llista general: `[✅ Obre les teves Llistes](/app/personal-todolists)`
+- MAI enllaços de fitxer/Finder per a llistes (no són documents).
+- MAI URLs absolutes amb domini escrit per tu, ni URLs inventades.
+- Si no coneixes el `listId`, consulta'l primer (`todo list-list --json`).
+
+Exemple de resposta:
+
+```
+Fet! He creat la llista d'enchiladas amb 11 ingredients.
+
+[✅ Obre la llista Enchiladas 8 persones](/app/personal-todolists?list=7facd64e-937e-4240-b6b0-6bb15c8abe41)
+```

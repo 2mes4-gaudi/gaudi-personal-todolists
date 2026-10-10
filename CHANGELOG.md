@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.9] - 2026-10-10
+
+- skill: secció "Enllaços" — deep-link canònic RELATIU /app/personal-todolists?list=<id> (mai domini absolut; el kernel l'absolutitza i el fa botó) — evita links crus al xat.
+
 ## [0.2.8] - 2026-10-10
 
 - fix(cli): sortida neta després de l'acció (es tanquen pool PG/bus NATS i es fa exit) — el CLI mai no queda penjat; el pool d'executors no es bloqueja. install.sh ara construeix en instal·lar/actualitzar.
