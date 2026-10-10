@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.10] - 2026-10-10
+
+- fix(hook): `npm install --include=dev` (amb NODE_ENV=production npm ometia devDependencies i el build fallava amb "tsc: not found").
+
 ## [0.2.9] - 2026-10-10
 
 - skill: secció "Enllaços" — deep-link canònic RELATIU /app/personal-todolists?list=<id> (mai domini absolut; el kernel l'absolutitza i el fa botó) — evita links crus al xat.

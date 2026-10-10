@@ -13,7 +13,9 @@ echo "→ [hook] install $FEATURE_ID"
 
 # 1. Build estándar del feature en su directorio (SPEC §8).
 echo "→ [hook] npm install + npm run build"
-npm install --no-audit --no-fund
+# --include=dev explícit: si el pod té NODE_ENV=production, npm ometria les
+# devDependencies i el build (tsc/vite) no tindria eines.
+npm install --no-audit --no-fund --include=dev
 npm run build
 
 # 2. Pasos específicos del feature (seeds, permisos...) — añádelos aquí.
