@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.7] - 2026-10-10
+
+- Icona del launcher (list-checks) segons l'estàndard d'icones (UI-STANDARD §8).
+
 ## [0.2.5] - 2026-09-30
 
 - i18n English-first (ui/src/locales en/ca/es, initGaudiI18n, useTranslation) + @gaudi/ui v0.4.0 via git+https.
