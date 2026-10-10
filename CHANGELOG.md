@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.8] - 2026-10-10
+
+- fix(cli): sortida neta després de l'acció (es tanquen pool PG/bus NATS i es fa exit) — el CLI mai no queda penjat; el pool d'executors no es bloqueja. install.sh ara construeix en instal·lar/actualitzar.
+
 ## [0.2.7] - 2026-10-10
 
 - Icona del launcher (list-checks) segons l'estàndard d'icones (UI-STANDARD §8).

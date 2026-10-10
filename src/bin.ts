@@ -23,4 +23,13 @@ try {
   process.exit(1);
 }
 const { registry, ctx } = runtime;
-buildTodoCli(registry, info, () => ctx).parse(process.argv);
+const program = buildTodoCli(registry, info, () => ctx);
+try {
+  await program.parseAsync(process.argv);
+  // El CLI d'agent MAI ha de quedar viu: el pool de PG / el bus NATS mantenen
+  // l'event loop obert i el runner d'executors esperaria indefinidament.
+  process.exit(process.exitCode ?? 0);
+} catch (err) {
+  process.stderr.write(`✗ ${(err as Error).message}\n`);
+  process.exit(1);
+}

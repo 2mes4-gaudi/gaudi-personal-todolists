@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 # Hook de instalación del feature (COMPLEMENTARIO al lifecycle base del core).
-# El core ya ha ejecutado: validación del manifest, npm install, npm run build
-# y el registro en el catálogo (gaudi feature install). Este hook es el punto
-# de entrada para pasos específicos del feature: crear colecciones/tablas que
-# declara su manifest, seeds, permisos, etc.
+# El kernel clona/pulsa el repo durante la instalación y ejecuta este hook:
+#   1. BUILD en el lugar: npm install + npm run build → dist/, api/index.js,
+#      ui/dist. El webserver de plataforma munta el feature DESDE SU PROPIO
+#      directorio: sin build no hay API ni UI.
+#   2. Pasos específicos del feature: seeds, permisos, tablas extra, etc.
+# Idempotente: se puede ejecutar varias veces (install y update).
 set -euo pipefail
 
 FEATURE_ID="${1:?uso: install.sh <feature_id>}"
-echo "→ [hook] install $FEATURE_ID — pasos específicos del feature aquí"
+echo "→ [hook] install $FEATURE_ID"
+
+# 1. Build estándar del feature en su directorio (SPEC §8).
+echo "→ [hook] npm install + npm run build"
+npm install --no-audit --no-fund
+npm run build
+
+# 2. Pasos específicos del feature (seeds, permisos...) — añádelos aquí.
+
+echo "→ [hook] install $FEATURE_ID — OK"
